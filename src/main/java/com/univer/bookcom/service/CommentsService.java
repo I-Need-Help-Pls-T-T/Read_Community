@@ -26,7 +26,7 @@ public class CommentsService {
         this.userRepository = userRepository;
     }
 
-    public ResponseEntity<?> createComment(Comments comment) {
+    public ResponseEntity<Object> createComment(Comments comment) {
         Optional<User> userOptional = userRepository.findById(comment.getUser().getId());
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
