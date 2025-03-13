@@ -1,5 +1,6 @@
 package com.univer.bookcom.service;
 
+import com.univer.bookcom.exception.BookNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.repository.BookRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -40,7 +41,7 @@ public class BookService {
             bookToUpdate.setBookStatus(updatedBook.getBookStatus());
             return bookRepository.save(bookToUpdate);
         } else {
-            throw new RuntimeException("Книга с этим id не найдена: " + id);
+            throw new BookNotFoundException("Книга с этим id не найдена: " + id);
         }
     }
 
