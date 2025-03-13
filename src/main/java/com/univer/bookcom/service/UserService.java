@@ -1,5 +1,6 @@
 package com.univer.bookcom.service;
 
+import com.univer.bookcom.exception.UserNotFoundEcception;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -40,7 +41,7 @@ public class UserService {
             userToUpdate.setCountTranslate(updatedUser.getCountTranslate());
             return userRepository.save(userToUpdate);
         } else {
-            throw new RuntimeException("Пользователь с этим id не найден: " + id);
+            throw new UserNotFoundEcception("Пользователь с этим id не найден: " + id);
         }
     }
 
