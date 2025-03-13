@@ -9,20 +9,22 @@ import com.univer.bookcom.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CommentsService {
+    private final CommentsRepository commentsRepository;
+    private final UserRepository userRepository;
+    private final BookRepository bookRepository;
 
-    @Autowired
-    private CommentsRepository commentsRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private BookRepository bookRepository;
+    public CommentsService(CommentsRepository commentsRepository, UserRepository
+                           userRepository, BookRepository bookRepository) {
+        this.commentsRepository = commentsRepository;
+        this.bookRepository = bookRepository;
+        this.userRepository = userRepository;
+    }
 
     public ResponseEntity<?> createComment(Comments comment) {
         Optional<User> userOptional = userRepository.findById(comment.getUser().getId());

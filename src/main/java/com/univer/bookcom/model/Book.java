@@ -98,12 +98,4 @@ public class Book {
     public void setBookStatus(BookStatus bookStatus) {
         this.bookStatus = bookStatus;
     }
-
-    public List<User> getTranslators() {
-        return translators;
-    }
-
-    public void setTranslators(List<User> translators) {
-        this.translators = translators;
-    }
 }
