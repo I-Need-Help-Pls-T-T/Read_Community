@@ -1,5 +1,7 @@
 package com.univer.bookcom.model;
 
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,41 +23,31 @@ import java.util.List;
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     private String title;
-    private String author;
     private long countChapters;
     private long publicYear;
 
     @Enumerated(EnumType.STRING)
     private BookStatus bookStatus;
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @SuppressWarnings("checkstyle:Indentation")
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE,
+            CascadeType.PERSIST, CascadeType.REFRESH}, fetch = FetchType.LAZY)
     @JoinTable(
-            name = "user_book",
+            name = "book_user",
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> translators = new ArrayList<>();
+    @JsonManagedReference
+    private List<User> authors = new ArrayList<>();
 
     @OneToMany(mappedBy = "book", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();
 
-    public List<Comments> getComments() {
-        return comments;
-    }
-
-    public void setComments(List<Comments> comments) {
-        this.comments = comments;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -65,14 +57,6 @@ public class Book {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 
     public long getCountChapters() {
@@ -97,5 +81,23 @@ public class Book {
 
     public void setBookStatus(BookStatus bookStatus) {
         this.bookStatus = bookStatus;
+    }
+
+    public List<User> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(List<User> authors) {
+        this.authors = authors;
+    }
+
+    public void addAuthor(User author) {
+        authors.add(author);
+        author.getBooks().add(this);
+    }
+
+    public void removeAuthor(User author) {
+        authors.remove(author);
+        author.getBooks().remove(this);
     }
 }

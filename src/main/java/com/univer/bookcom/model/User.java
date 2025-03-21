@@ -1,5 +1,6 @@
 package com.univer.bookcom.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,7 +18,7 @@ import java.util.List;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     private String name;
     private String email;
@@ -25,15 +26,16 @@ public class User {
     private long countPublic;
     private long countTranslate;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-            fetch = FetchType.LAZY, mappedBy = "translators")
+    @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<Book> books = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -75,5 +77,23 @@ public class User {
 
     public void setCountTranslate(long countTranslate) {
         this.countTranslate = countTranslate;
+    }
+
+    public List<Book> getBooks() {
+        return books;
+    }
+
+    public void addBook(Book book) {
+        books.add(book);
+        book.getAuthors().add(this);
+    }
+
+    public void removeBook(Book book) {
+        books.remove(book);
+        book.getAuthors().remove(this);
+    }
+
+    public List<Comments> getComments() {
+        return comments;
     }
 }

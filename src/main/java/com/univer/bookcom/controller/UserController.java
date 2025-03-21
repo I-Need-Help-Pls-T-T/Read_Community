@@ -1,9 +1,11 @@
 package com.univer.bookcom.controller;
 
+import com.univer.bookcom.exception.UserNotFoundException;
+import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.service.UserService;
 import java.util.List;
-import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,54 +27,80 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable long id) {
-        Optional<User> user = userService.getUserById(id);
-        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok).orElseThrow(() ->
+                        new UserNotFoundException("Пользователь с id " + id + " не найден"));
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User savedUser = userService.saveUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable long id, @RequestBody User updatedUser) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
         try {
             User user = userService.updateUser(id, updatedUser);
             return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok("User deleted successfully");
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.noContent().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @GetMapping("/search/name")
-    public List<User> findUsersByName(@RequestParam String name) {
-        return userService.findUsersByName(name);
+    public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
+        List<User> users = userService.findUsersByName(name);
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/search/email")
-    public List<User> findUsersByEmail(@RequestParam String email) {
-        return userService.findUsersByEmail(email);
+    public ResponseEntity<User> searchUserByEmail(@RequestParam String email) {
+        return userService.findUserByEmail(email)
+                .map(ResponseEntity::ok).orElseThrow(() ->
+                        new UserNotFoundException("Пользователь с email " + email + " не найден"));
     }
 
-    @GetMapping("/search/count-public")
-    public List<User> findUsersByCountPublicGreaterThanEqual(@RequestParam long countPublic) {
-        return userService.findUsersByCountPublicGreaterThanEqual(countPublic);
+    @PostMapping("/{userId}/books")
+    public ResponseEntity<Void> addBookToUser(
+            @PathVariable Long userId,
+            @RequestBody Book book) {
+        try {
+            userService.addBookToUser(userId, book);
+            return ResponseEntity.noContent().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    @GetMapping("/search/count-translate")
-    public List<User> findUsersByCountTranslateGreaterThanEqual(@RequestParam long countTranslate) {
-        return userService.findUsersByCountTranslateGreaterThanEqual(countTranslate);
+    @DeleteMapping("/{userId}/books/{bookId}")
+    public ResponseEntity<Void> removeBookFromUser(
+            @PathVariable Long userId,
+            @PathVariable Long bookId) {
+        try {
+            Book book = new Book();
+            book.setId(bookId);
+            userService.removeBookFromUser(userId, book);
+            return ResponseEntity.noContent().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }

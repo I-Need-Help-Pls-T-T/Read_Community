@@ -1,9 +1,11 @@
 package com.univer.bookcom.service;
 
-import com.univer.bookcom.exception.UserNotFoundEcception;
+import com.univer.bookcom.exception.UserNotFoundException;
+import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.User;
+import com.univer.bookcom.repository.BookRepository;
+import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -11,60 +13,79 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final CommentsRepository commentsRepository;
+    private final BookRepository bookRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, CommentsRepository commentsRepository,
+                       BookRepository bookRepository) {
         this.userRepository = userRepository;
+        this.commentsRepository = commentsRepository;
+        this.bookRepository = bookRepository;
     }
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    public Optional<User> getUserById(long id) {
+    public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
-    @Transactional
-    public User createUser(User user) {
-        // добавить проверочку
+    public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    public User updateUser(long id, User updatedUser) {
-        Optional<User> existingUser = userRepository.findById(id);
-        if (existingUser.isPresent()) {
-            User userToUpdate = existingUser.get();
-            userToUpdate.setName(updatedUser.getName());
-            userToUpdate.setEmail(updatedUser.getEmail());
-            userToUpdate.setPassword(updatedUser.getPassword());
-            userToUpdate.setCountPublic(updatedUser.getCountPublic());
-            userToUpdate.setCountTranslate(updatedUser.getCountTranslate());
-            return userRepository.save(userToUpdate);
-        } else {
-            throw new UserNotFoundEcception("Пользователь с этим id не найден: " + id);
-        }
+    public User updateUser(Long id, User updatedUser) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setName(updatedUser.getName());
+                    user.setEmail(updatedUser.getEmail());
+                    user.setPassword(updatedUser.getPassword());
+                    user.setCountPublic(updatedUser.getCountPublic());
+                    user.setCountTranslate(updatedUser.getCountTranslate());
+                    return userRepository.save(user);
+                }).orElseThrow(() ->
+                        new UserNotFoundException("Пользователь с id " + id + " не найден"));
     }
 
-    @Transactional
-    public void deleteUser(long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new
-                        IllegalArgumentException("Пользователь с этим id не найден: " + id));
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() ->
+                new UserNotFoundException("Пользователь с id " + id + " не найден"));
+
+        commentsRepository.deleteAll(user.getComments());
+
+        for (Book book : user.getBooks()) {
+            book.getAuthors().remove(user);
+
+            if (book.getAuthors().isEmpty()) {
+                bookRepository.delete(book);
+            } else {
+                bookRepository.save(book);
+            }
+        }
+
         userRepository.delete(user);
     }
 
     public List<User> findUsersByName(String name) {
-        return userRepository.findByName(name);
+        return userRepository.findByNameContaining(name);
     }
 
-    public List<User> findUsersByEmail(String email) {
+    public Optional<User> findUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
-    public List<User> findUsersByCountPublicGreaterThanEqual(long countPublic) {
-        return userRepository.findByCountPublicGreaterThanEqual(countPublic);
+    public void addBookToUser(Long userId, Book book) {
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                        new UserNotFoundException("Пользователь с id " + userId + " не найден"));
+        user.addBook(book);
+        userRepository.save(user);
     }
 
-    public List<User> findUsersByCountTranslateGreaterThanEqual(long countTranslate) {
-        return userRepository.findByCountTranslateGreaterThanEqual(countTranslate);
+    public void removeBookFromUser(Long userId, Book book) {
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                        new UserNotFoundException("Пользователь с id " + userId + " не найден"));
+        user.removeBook(book);
+        userRepository.save(user);
     }
 }
