@@ -3,6 +3,8 @@ package com.univer.bookcom.repository;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
 import java.util.List;
+
+import com.univer.bookcom.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,5 +17,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     List<Book> findByPublicYear(long publicYear);
 
-    List<Book> findByBookStatus(BookStatus bookStatus);
+    List<Book> findByStatus(BookStatus status);
+
+    List<Book> findByAuthorsContaining(User author);
 }

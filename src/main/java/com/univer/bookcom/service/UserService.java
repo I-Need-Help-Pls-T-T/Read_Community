@@ -41,8 +41,6 @@ public class UserService {
                     user.setName(updatedUser.getName());
                     user.setEmail(updatedUser.getEmail());
                     user.setPassword(updatedUser.getPassword());
-                    user.setCountPublic(updatedUser.getCountPublic());
-                    user.setCountTranslate(updatedUser.getCountTranslate());
                     return userRepository.save(user);
                 }).orElseThrow(() ->
                         new UserNotFoundException("Пользователь с id " + id + " не найден"));

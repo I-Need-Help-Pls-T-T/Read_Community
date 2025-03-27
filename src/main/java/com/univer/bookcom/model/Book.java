@@ -1,7 +1,7 @@
 package com.univer.bookcom.model;
 
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,7 +30,7 @@ public class Book {
     private long publicYear;
 
     @Enumerated(EnumType.STRING)
-    private BookStatus bookStatus;
+    private BookStatus status;
 
     @SuppressWarnings("checkstyle:Indentation")
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE,
@@ -40,7 +40,7 @@ public class Book {
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    @JsonManagedReference
+    @JsonIgnore
     private List<User> authors = new ArrayList<>();
 
     @OneToMany(mappedBy = "book", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
@@ -49,6 +49,10 @@ public class Book {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -76,19 +80,15 @@ public class Book {
     }
 
     public BookStatus getBookStatus() {
-        return bookStatus;
+        return status;
     }
 
     public void setBookStatus(BookStatus bookStatus) {
-        this.bookStatus = bookStatus;
+        this.status = bookStatus;
     }
 
     public List<User> getAuthors() {
         return authors;
-    }
-
-    public void setAuthors(List<User> authors) {
-        this.authors = authors;
     }
 
     public void addAuthor(User author) {

@@ -3,6 +3,7 @@ package com.univer.bookcom.controller;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.User;
+import com.univer.bookcom.service.BookService;
 import com.univer.bookcom.service.UserService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final BookService bookService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, BookService bookService) {
         this.userService = userService;
+        this.bookService = bookService;
     }
 
     @GetMapping
@@ -58,7 +61,23 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         try {
+            User author = userService.getUserById(id)
+                    .orElseThrow(() -> new UserNotFoundException("Пользователь с id " + id + " не найден"));
+
+            List<Book> books = bookService.findBooksByAuthor(author);
+
+            for (Book book : books) {
+                book.removeAuthor(author);
+
+                if (book.getAuthors().isEmpty()) {
+                    bookService.deleteBook(book.getId());
+                } else {
+                    bookService.saveBook(book);
+                }
+            }
+
             userService.deleteUser(id);
+
             return ResponseEntity.noContent().build();
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

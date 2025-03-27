@@ -65,7 +65,7 @@ public class BookService {
     }
 
     public List<Book> findBooksByStatus(BookStatus bookStatus) {
-        return bookRepository.findByBookStatus(bookStatus);
+        return bookRepository.findByStatus(bookStatus);
     }
 
     public void removeAuthorFromBook(Long bookId, Long authorId) {
@@ -85,7 +85,6 @@ public class BookService {
     }
 
     public Book createBookWithAuthor(Long authorId, Book book) {
-        // Находим автора по ID
         User author = userService.getUserById(authorId).orElseThrow(() ->
                 new UserNotFoundException("Автор с id " + authorId + " не найден"));
 
@@ -94,5 +93,9 @@ public class BookService {
         savedBook.addAuthor(author);
 
         return bookRepository.save(savedBook);
+    }
+
+    public List<Book> findBooksByAuthor(User author) {
+        return bookRepository.findByAuthorsContaining(author);
     }
 }

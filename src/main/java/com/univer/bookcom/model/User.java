@@ -1,6 +1,5 @@
 package com.univer.bookcom.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,12 +22,9 @@ public class User {
     private String name;
     private String email;
     private String password;
-    private long countPublic;
-    private long countTranslate;
 
     @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL)
-    @JsonBackReference
     private List<Book> books = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
@@ -63,21 +59,6 @@ public class User {
         this.password = password;
     }
 
-    public long getCountPublic() {
-        return  countPublic;
-    }
-
-    public void setCountPublic(long countPublic) {
-        this.countPublic = countPublic;
-    }
-
-    public long getCountTranslate() {
-        return countTranslate;
-    }
-
-    public void setCountTranslate(long countTranslate) {
-        this.countTranslate = countTranslate;
-    }
 
     public List<Book> getBooks() {
         return books;
