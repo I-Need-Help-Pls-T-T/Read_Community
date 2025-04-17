@@ -1,5 +1,7 @@
 package com.univer.bookcom.service;
 
+import com.univer.bookcom.cache.CacheContainer;
+import com.univer.bookcom.cache.CacheEntry;
 import com.univer.bookcom.exception.BookNotFoundException;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
@@ -7,7 +9,10 @@ import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.BookRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +20,14 @@ import org.springframework.stereotype.Service;
 public class BookService {
     private final BookRepository bookRepository;
     private final UserService userService;
+    private final Map<Long, CacheEntry<Book>> bookCache;
+    private static final int MAX_CACHE_SIZE = 3;
 
-    public BookService(BookRepository bookRepository, UserService userService) {
+    public BookService(BookRepository bookRepository, UserService userService,
+                       CacheContainer cacheContainer) {
         this.bookRepository = bookRepository;
         this.userService = userService;
+        this.bookCache = cacheContainer.getBookCache(); // получаем кэш книг
     }
 
     public List<Book> getAllBooks() {
@@ -26,12 +35,32 @@ public class BookService {
     }
 
     public Optional<Book> getBookById(Long id) {
-        return Optional.ofNullable(bookRepository.findById(id).orElseThrow(() -> new
-                EntityNotFoundException("Книга не найдена")));
+        if (bookCache.containsKey(id)) {
+            System.out.println("Книга получена из кэша: " + id);
+            return Optional.of(bookCache.get(id).getValue());
+        }
+
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Книга не найдена"));
+
+        if (bookCache.size() >= MAX_CACHE_SIZE) {
+            Long oldestKey = Collections.min(bookCache.entrySet(),
+                            Comparator.comparingLong(e -> e.getValue().getTimestamp()))
+                    .getKey();
+            bookCache.remove(oldestKey);
+            System.out.println("Удалена самая старая книга из кэша: " + oldestKey);
+        }
+
+        bookCache.put(id, new CacheEntry<>(book));
+        System.out.println("Книга добавлена в кэш: " + id);
+        return Optional.of(book);
     }
 
     public Book saveBook(Book book) {
-        return bookRepository.save(book);
+        Book saved = bookRepository.save(book);
+        bookCache.put(saved.getId(), new CacheEntry<>(saved));
+        System.out.println("Книга сохранена и добавлена в кэш: " + saved.getId());
+        return saved;
     }
 
     public Book updateBook(Long id, Book updatedBook) {
@@ -42,7 +71,10 @@ public class BookService {
             bookToUpdate.setCountChapters(updatedBook.getCountChapters());
             bookToUpdate.setPublicYear(updatedBook.getPublicYear());
             bookToUpdate.setBookStatus(updatedBook.getBookStatus());
-            return bookRepository.save(bookToUpdate);
+            Book saved = bookRepository.save(bookToUpdate);
+            bookCache.put(id, new CacheEntry<>(saved));
+            System.out.println("Книга обновлена и добавлена в кэш: " + id);
+            return saved;
         } else {
             throw new BookNotFoundException("Книга с этим id не найдена: " + id);
         }
@@ -50,6 +82,8 @@ public class BookService {
 
     public void deleteBook(Long id) {
         bookRepository.deleteById(id);
+        bookCache.remove(id);
+        System.out.println("Книга удалена из базы и кэша: " + id);
     }
 
     public List<Book> findBooksByTitle(String title) {
@@ -60,6 +94,10 @@ public class BookService {
         return bookRepository.findByAuthor(author);
     }
 
+    public List<Book> findBooksByAuthor(User author) {
+        return bookRepository.findByAuthorsContaining(author);
+    }
+
     public List<Book> findBooksByPublicYear(long publicYear) {
         return bookRepository.findByPublicYear(publicYear);
     }
@@ -68,34 +106,21 @@ public class BookService {
         return bookRepository.findByStatus(bookStatus);
     }
 
-    public void removeAuthorFromBook(Long bookId, Long authorId) {
-        Book book = bookRepository.findById(bookId).orElseThrow(() ->
-                new BookNotFoundException("Книга с id " + bookId + " не найдена"));
-        User author = book.getAuthors().stream()
-                .filter(a -> a.getId().equals(authorId))
-                .findFirst().orElseThrow(() ->
-                        new UserNotFoundException("Автор с id " + authorId + " не найден"));
-
-        book.removeAuthor(author);
-        if (book.getAuthors().isEmpty()) {
-            bookRepository.delete(book);
-        } else {
-            bookRepository.save(book);
-        }
-    }
-
     public Book createBookWithAuthor(Long authorId, Book book) {
         User author = userService.getUserById(authorId).orElseThrow(() ->
                 new UserNotFoundException("Автор с id " + authorId + " не найден"));
 
         Book savedBook = bookRepository.save(book);
-
         savedBook.addAuthor(author);
 
-        return bookRepository.save(savedBook);
+        Book finalSaved = bookRepository.save(savedBook);
+        bookCache.put(finalSaved.getId(), new CacheEntry<>(finalSaved));
+        System.out.println("Книга с автором создана и добавлена в кэш: " + finalSaved.getId());
+
+        return finalSaved;
     }
 
-    public List<Book> findBooksByAuthor(User author) {
-        return bookRepository.findByAuthorsContaining(author);
+    public boolean existsById(Long id) {
+        return bookRepository.existsById(id);
     }
 }

@@ -1,5 +1,7 @@
 package com.univer.bookcom.service;
 
+import com.univer.bookcom.cache.CacheContainer;
+import com.univer.bookcom.cache.CacheEntry;
 import com.univer.bookcom.exception.BookNotFoundException;
 import com.univer.bookcom.exception.CommentNotFoundException;
 import com.univer.bookcom.exception.UserNotFoundException;
@@ -11,6 +13,8 @@ import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,13 +22,16 @@ public class CommentsService {
     private final CommentsRepository commentsRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final CacheContainer cacheContainer;
 
     public CommentsService(CommentsRepository commentsRepository,
                            BookRepository bookRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           CacheContainer cacheContainer) {
         this.commentsRepository = commentsRepository;
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
+        this.cacheContainer = cacheContainer;
     }
 
     public Comments createComment(Long bookId, Long userId, String text) {
@@ -39,7 +46,9 @@ public class CommentsService {
         comment.setBook(book);
         comment.setUser(user);
 
-        return commentsRepository.save(comment);
+        Comments saved = commentsRepository.save(comment);
+        cacheContainer.getCommentsCache().put(saved.getId(), new CacheEntry<>(saved));
+        return saved;
     }
 
     public List<Comments> getCommentsByBookId(Long bookId) {
@@ -54,12 +63,28 @@ public class CommentsService {
         Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
                 new CommentNotFoundException("Комментарий с id " + commentId + " не найден"));
         comment.setText(newText);
-        return commentsRepository.save(comment);
+        Comments updated = commentsRepository.save(comment);
+        cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));
+        return updated;
     }
 
     public void deleteComment(Long commentId) {
         Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
                 new CommentNotFoundException("Комментарий с id " + commentId + " не найден"));
         commentsRepository.delete(comment);
+        cacheContainer.getCommentsCache().remove(commentId);
+        System.out.println("Удаление комментария вручную из кэша: id = " + commentId);
+    }
+
+    public Optional<Comments> getCommentById(Long commentId) {
+        Map<Long, CacheEntry<Comments>> cache = cacheContainer.getCommentsCache();
+        if (cache.containsKey(commentId)) {
+            System.out.println("Комментарий найден в кэше: id = " + commentId);
+            return Optional.of(cache.get(commentId).getValue());
+        }
+
+        Optional<Comments> comment = commentsRepository.findById(commentId);
+        comment.ifPresent(c -> cache.put(c.getId(), new CacheEntry<>(c)));
+        return comment;
     }
 }

@@ -38,10 +38,19 @@ public class BookController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
-        return bookService.getBookById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new BookNotFoundException("Книга с id " + id + " не найдена"));
+    public ResponseEntity<Object> getBookById(@PathVariable Long id) {
+        try {
+            if (!bookService.existsById(id)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книга с ID " + id + " не найдена");
+            }
+            Book book = bookService.getBookById(id).orElseThrow(() ->
+                            new BookNotFoundException("Книга с id " + id + " не найдена"));
+            return ResponseEntity.ok(book);
+        } catch (BookNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        }
     }
 
     @PostMapping("/{authorId}/book")
@@ -67,37 +76,78 @@ public class BookController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
         try {
+            if (!bookService.existsById(id)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книга с ID " + id + " не найдена");
+            }
             bookService.deleteBook(id);
-            return ResponseEntity.noContent().build();
-        } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.ok("Книга успешно удалена");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при удалении: " + e.getMessage());
         }
     }
 
     @GetMapping("/search/title")
-    public ResponseEntity<List<Book>> searchBooksByTitle(@RequestParam String title) {
-        List<Book> books = bookService.findBooksByTitle(title);
-        return ResponseEntity.ok(books);
+    public ResponseEntity<Object> searchBooksByTitle(@RequestParam String title) {
+        try {
+            List<Book> books = bookService.findBooksByTitle(title);
+            if (books.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книги с названием '" + title + "' не найдены");
+            }
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при поиске книг: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search/author")
-    public ResponseEntity<List<Book>> searchBooksByAuthor(@RequestParam String author) {
-        List<Book> books = bookService.findBooksByAuthor(author);
-        return ResponseEntity.ok(books);
+    public ResponseEntity<Object> searchBooksByAuthor(@RequestParam String author) {
+        try {
+            List<Book> books = bookService.findBooksByAuthor(author);
+            if (books.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книги автора '" + author + "' не найдены");
+            }
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при поиске книг: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search/year")
-    public ResponseEntity<List<Book>> searchBooksByYear(@RequestParam Long year) {
-        List<Book> books = bookService.findBooksByPublicYear(year);
-        return ResponseEntity.ok(books);
+    public ResponseEntity<Object> searchBooksByYear(@RequestParam Long year) {
+        try {
+            List<Book> books = bookService.findBooksByPublicYear(year);
+            if (books.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книги за " + year + " год не найдены");
+            }
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при поиске книг: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search/status")
-    public ResponseEntity<List<Book>> searchBooksByStatus(@RequestParam BookStatus bookStatus) {
-        List<Book> books = bookService.findBooksByStatus(bookStatus);
-        return ResponseEntity.ok(books);
+    public ResponseEntity<Object> searchBooksByStatus(@RequestParam BookStatus bookStatus) {
+        try {
+            List<Book> books = bookService.findBooksByStatus(bookStatus);
+            if (books.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книги со статусом '" + bookStatus + "' не найдены");
+            }
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при поиске книг: " + e.getMessage());
+        }
     }
 
     @PostMapping("/{bookId}/authors/{authorId}")

@@ -3,6 +3,7 @@ package com.univer.bookcom.controller;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.User;
+import com.univer.bookcom.repository.UserRepository;
 import com.univer.bookcom.service.BookService;
 import com.univer.bookcom.service.UserService;
 import java.util.List;
@@ -21,12 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private static final String bookNot = " не найден";
     private final UserService userService;
     private final BookService bookService;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService, BookService bookService) {
+    public UserController(UserService userService, BookService bookService,
+                          UserRepository userRepository) {
         this.userService = userService;
         this.bookService = bookService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -37,9 +42,15 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok).orElseThrow(() ->
-                        new UserNotFoundException("Пользователь с id " + id + " не найден"));
+        try {
+            User user = userService.getUserById(id).orElseThrow(() ->
+                            new UserNotFoundException("Пользователь с id " + id + bookNot));
+
+            return ResponseEntity.ok(user);
+
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @PostMapping
@@ -61,8 +72,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         try {
-            User author = userService.getUserById(id)
-                    .orElseThrow(() -> new UserNotFoundException("Пользователь с id " + id + " не найден"));
+            User author = userService.getUserById(id).orElseThrow(() ->
+                            new UserNotFoundException("Пользователь с id " + id + bookNot));
 
             List<Book> books = bookService.findBooksByAuthor(author);
 
@@ -85,16 +96,33 @@ public class UserController {
     }
 
     @GetMapping("/search/name")
-    public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
-        List<User> users = userService.findUsersByName(name);
-        return ResponseEntity.ok(users);
+    public ResponseEntity<Object> searchUsersByName(@RequestParam String name) {
+        try {
+            List<User> users = userService.findUsersByName(name);
+
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Пользователи с именем '" + name + bookNot);
+            }
+
+            return ResponseEntity.ok(users);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Произошла ошибка при поиске пользователей: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search/email")
-    public ResponseEntity<User> searchUserByEmail(@RequestParam String email) {
-        return userService.findUserByEmail(email)
-                .map(ResponseEntity::ok).orElseThrow(() ->
-                        new UserNotFoundException("Пользователь с email " + email + " не найден"));
+    public ResponseEntity<?> searchUserByEmail(@RequestParam String email) {
+        try {
+            User user = userService.findUserByEmail(email).orElseThrow(() ->
+                            new UserNotFoundException("Пользователь с email " + email + bookNot));
+            return ResponseEntity.ok(user);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Пользователи с почтой " + email + bookNot);
+        }
     }
 
     @PostMapping("/{userId}/books")
@@ -120,6 +148,60 @@ public class UserController {
             return ResponseEntity.noContent().build();
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @GetMapping("/by-book-title")
+    public ResponseEntity<?> getUsersByBookTitle(@RequestParam String title) {
+        try {
+            List<User> users = userRepository.findUsersByBookTitle(title);
+
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Книга с названием '" + title + "' не найдена или у неё нет авторов");
+            }
+
+            return ResponseEntity.ok(users);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Произошла внутренняя ошибка сервера");
+        }
+    }
+
+    // JPQL запрос
+    @GetMapping("/search/by-book-title")
+    public ResponseEntity<?> getAuthorsByBookTitle(@RequestParam String title) {
+        try {
+            List<User> authors = userRepository.findAuthorsByBookTitle(title);
+
+            if (authors.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Авторы книги с названием '" + title + "' не найдены");
+            }
+
+            return ResponseEntity.ok(authors);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Произошла ошибка при поиске авторов: " + e.getMessage());
+        }
+    }
+
+    // Native SQL запрос
+    @GetMapping("/search/by-book-title/native")
+    public ResponseEntity<?> getAuthorsByBookTitleNative(@RequestParam String title) {
+        try {
+            List<User> authors = userRepository.findAuthorsByBookTitleNative(title);
+
+            if (authors.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Авторы книги с названием '" + title + "' не найдены");
+            }
+
+            return ResponseEntity.ok(authors);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Произошла ошибка при поиске авторов: " + e.getMessage());
         }
     }
 }

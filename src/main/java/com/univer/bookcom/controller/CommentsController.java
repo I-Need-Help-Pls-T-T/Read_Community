@@ -60,7 +60,7 @@ public class CommentsController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         try {
-            commentsService.deleteComment(commentId);
+            //commentsService.deleteComment(commentId);
             return ResponseEntity.noContent().build();
         } catch (CommentNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
