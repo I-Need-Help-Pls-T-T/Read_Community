@@ -35,9 +35,10 @@ public class BookService {
     }
 
     public Optional<Book> getBookById(Long id) {
-        if (bookCache.containsKey(id)) {
+        CacheEntry<Book> cachedEntry = bookCache.get(id);
+        if (cachedEntry != null) {
             System.out.println("Книга получена из кэша: " + id);
-            return Optional.of(bookCache.get(id).getValue());
+            return Optional.of(cachedEntry.getValue());
         }
 
         Book book = bookRepository.findById(id)
@@ -122,5 +123,9 @@ public class BookService {
 
     public boolean existsById(Long id) {
         return bookRepository.existsById(id);
+    }
+
+    public boolean isCachedOrExists(Long id) {
+        return bookCache.containsKey(id) || bookRepository.existsById(id);
     }
 }

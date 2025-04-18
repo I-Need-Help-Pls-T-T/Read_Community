@@ -40,7 +40,7 @@ public class BookController {
     @GetMapping("/{id}")
     public ResponseEntity<Object> getBookById(@PathVariable Long id) {
         try {
-            if (!bookService.existsById(id)) {
+            if (!bookService.isCachedOrExists(id)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Книга с ID " + id + " не найдена");
             }
@@ -78,7 +78,7 @@ public class BookController {
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteBook(@PathVariable Long id) {
         try {
-            if (!bookService.existsById(id)) {
+            if (!bookService.isCachedOrExists(id)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Книга с ID " + id + " не найдена");
             }
