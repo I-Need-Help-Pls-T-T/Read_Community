@@ -38,7 +38,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Управление пользователями", description = "API для управления пользователями")
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
-    private static final String bookNot = " не найден";
     private final UserService userService;
     private final BookService bookService;
     private final UserRepository userRepository;
@@ -51,240 +50,245 @@ public class UserController {
     }
 
     @Operation(summary = "Получить всех пользователей",
-            description = "Возвращает список всех пользователей", responses = {
+            description = "Возвращает список всех пользователей",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Пользователи найдены",
-                            content = @Content(array = @ArraySchema
-                                    (schema = @Schema(implementation = User.class)))),
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = User.class)))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         log.debug("Запрос всех пользователей");
         List<User> users = userService.getAllUsers();
-        log.info("Найдено {} пользователей", users.size());
+        log.info("Успешно возвращено {} пользователей", users.size());
         return ResponseEntity.ok(users);
     }
 
     @Operation(summary = "Получить пользователя по ID",
-            description = "Возвращает пользователя по указанному ID", responses = {
+            description = "Возвращает пользователя по указанному ID",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Пользователь найден",
                             content = @Content(schema = @Schema(implementation = User.class))),
                 @ApiResponse(responseCode = "400", description = "Некорректный ID",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректный ID\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректный ID\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователь не найден\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable @Positive
-                    (message = "ID пользователя должен быть положительным числом") Long id) {
-        log.debug("Запрос пользователя с ID: {}", id);
+            (message = "ID пользователя должен быть положительным числом") Long id) {
+        log.debug("Запрос пользователя по ID");
 
         User user = userService.getUserById(id)
                 .orElseThrow(() -> {
-                    log.error("Пользователь с ID {} не найден", id);
-                    return new UserNotFoundException("Пользователь с id " + id + " не найден");
+                    log.error("Пользователь не найден");
+                    return new UserNotFoundException("Пользователь не найден");
                 });
 
-        log.info("Найден пользователь: {}", user);
+        log.info("Пользователь успешно найден");
         return ResponseEntity.ok(user);
     }
 
-    @Operation(summary = "Создать пользователя", description = "Создает нового пользователя",
+    @Operation(summary = "Создать пользователя",
+            description = "Создает нового пользователя",
             responses = {
                 @ApiResponse(responseCode = "201", description = "Пользователь успешно создан",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                @ApiResponse(responseCode = "400", description = "Некорректные входные данные",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректные входные данные\" }"))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PostMapping
     public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        log.debug("Создание нового пользователя: {}", user);
+        log.debug("Создание нового пользователя");
 
         User savedUser = userService.saveUser(user);
 
-        log.info("Создан новый пользователь с ID: {}", savedUser.getId());
+        log.info("Пользователь успешно создан");
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
     @Operation(summary = "Обновить пользователя",
-            description = "Обновляет существующего пользователя по ID", responses = {
-                @ApiResponse(responseCode = "200", description = "Пользователь успешно обновлен",
+            description = "Обновляет существующего пользователя",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Пользователь обновлен",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                @ApiResponse(responseCode = "400",
-                        description = "Некорректный ID или входные данные", content = @Content
-                        (schema = @Schema(example =
-                                "{ \"ошибка\": \"Некорректный ID или входные данные\" }"))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователь не найден\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable @Positive
-            (message = "ID пользователя должен быть положительным числом") Long id,
+                    (message = "ID пользователя должен быть положительным числом") Long id,
             @Valid @RequestBody User updatedUser) {
-        log.debug("Обновление пользователя с ID {}: {}", id, updatedUser);
+        log.debug("Обновление пользователя");
 
         User user = userService.updateUser(id, updatedUser);
 
-        log.info("Пользователь с ID {} успешно обновлен", id);
+        log.info("Пользователь успешно обновлен");
         return ResponseEntity.ok(user);
     }
 
-    @Operation(summary = "Удалить пользователя", description = "Удаляет пользователя по ID",
+    @Operation(summary = "Удалить пользователя",
+            description = "Удаляет пользователя и связанные данные",
             responses = {
-                @ApiResponse(responseCode = "204", description = "Пользователь успешно удален"),
+                @ApiResponse(responseCode = "204", description = "Пользователь удален"),
                 @ApiResponse(responseCode = "400", description = "Некорректный ID",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректный ID\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректный ID\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователь не найден\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable @Positive
             (message = "ID пользователя должен быть положительным числом") Long id) {
-        log.debug("Удаление пользователя с ID: {}", id);
+        log.debug("Удаление пользователя");
 
         User author = userService.getUserById(id)
                 .orElseThrow(() -> {
-                    log.error("Пользователь с ID {} не найден", id);
-                    return new UserNotFoundException("Пользователь с id " + id + " не найден");
+                    log.error("Пользователь не найден");
+                    return new UserNotFoundException("Пользователь не найден");
                 });
 
         List<Book> books = bookService.findBooksByAuthor(author);
-        log.debug("Найдено {} книг автора для удаления", books.size());
+        log.debug("Найдено {} связанных книг", books.size());
 
-        for (Book book : books) {
+        books.forEach(book -> {
             book.removeAuthor(author);
             if (book.getAuthors().isEmpty()) {
-                log.debug("Удаление книги {} без авторов", book.getId());
                 bookService.deleteBook(book.getId());
             } else {
                 bookService.saveBook(book);
             }
-        }
+        });
 
         userService.deleteUser(id);
-        log.info("Пользователь с ID {} и все связанные данные успешно удалены", id);
+        log.info("Пользователь и связанные данные успешно удалены");
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Поиск пользователей по имени",
-            description = "Возвращает пользователей, соответствующих имени", responses = {
+            description = "Возвращает пользователей по имени",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Пользователи найдены",
-                            content = @Content(array = @ArraySchema
-                                    (schema = @Schema(implementation = User.class)))),
-                @ApiResponse(responseCode = "400", description = "Некорректный параметр имени",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Имя не может быть пустым\" }"))),
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = User.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректное имя",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Имя не может быть пустым\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователи не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователи не найдены\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователи не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/name")
     public ResponseEntity<List<User>> searchUsersByName(@RequestParam @NotBlank
             (message = "Имя пользователя не может быть пустым") String name) {
-        log.debug("Поиск пользователей по имени: {}", name);
+        log.debug("Поиск пользователей по имени");
 
         List<User> users = userService.findUsersByName(name);
 
         if (users.isEmpty()) {
-            log.warn("Пользователи с именем '{}' не найдены", name);
-            throw new UserNotFoundException("Пользователи с именем '" + name + "' не найдены");
+            log.warn("Пользователи не найдены");
+            throw new UserNotFoundException("Пользователи не найдены");
         }
 
-        log.info("Найдено {} пользователей с именем '{}'", users.size(), name);
+        log.info("Найдено {} пользователей", users.size());
         return ResponseEntity.ok(users);
     }
 
     @Operation(summary = "Поиск пользователя по email",
-            description = "Возвращает пользователя по email", responses = {
+            description = "Возвращает пользователя по email",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Пользователь найден",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                @ApiResponse(responseCode = "400", description = "Некорректный формат email",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректный формат email\" }"))),
+                @ApiResponse(responseCode = "400", description = "Некорректный email",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректный формат email\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователь не найден\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/email")
     public ResponseEntity<User> searchUserByEmail(
             @RequestParam @Email(message = "Некорректный формат email") String email) {
-        log.debug("Поиск пользователя по email: {}", email);
+        log.debug("Поиск пользователя по email");
 
         User user = userService.findUserByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь с email '{}' не найден", email);
-                    return new
-                            UserNotFoundException("Пользователь с email " + email + " не найден");
+                    log.warn("Пользователь не найден");
+                    return new UserNotFoundException("Пользователь не найден");
                 });
 
-        log.info("Найден пользователь по email {}: {}", email, user);
+        log.info("Пользователь успешно найден");
         return ResponseEntity.ok(user);
     }
 
     @Operation(summary = "Добавить книгу пользователю",
-            description = "Добавляет книгу в коллекцию пользователя", responses = {
-                @ApiResponse(responseCode = "204", description = "Книга успешно добавлена"),
-                @ApiResponse(responseCode = "400", description = "Некорректный ID или данные книги",
-                            content = @Content(schema = @Schema(example =
-                                    "{ \"ошибка\": \"Некорректный ID или данные книги\" }"))),
+            description = "Добавляет книгу в коллекцию пользователя",
+            responses = {
+                @ApiResponse(responseCode = "204", description = "Книга добавлена"),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные книги\"}"))),
                 @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Пользователь не найден\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PostMapping("/{userId}/books")
     public ResponseEntity<Void> addBookToUser(@PathVariable @Positive
-                    (message = "ID пользователя должен быть положительным числом") Long userId,
+            (message = "ID пользователя должен быть положительным числом") Long userId,
             @Valid @RequestBody Book book) {
-        log.debug("Добавление книги {} пользователю {}", book, userId);
+        log.debug("Добавление книги пользователю");
 
         userService.addBookToUser(userId, book);
 
-        log.info("Книга успешно добавлена пользователю с ID {}", userId);
+        log.info("Книга успешно добавлена");
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Удалить книгу у пользователя",
-            description = "Удаляет книгу из коллекции пользователя", responses = {
-                @ApiResponse(responseCode = "204", description = "Книга успешно удалена"),
-                @ApiResponse(responseCode = "400", description = "Некорректный ID",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректный ID\" }"))),
-                @ApiResponse(responseCode = "404",
-                        description = "Пользователь или книга не найдены",
+            description = "Удаляет книгу из коллекции пользователя",
+            responses = {
+                @ApiResponse(responseCode = "204", description = "Книга удалена"),
+                @ApiResponse(responseCode = "400", description = "Некорректные ID",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные ID\"}"))),
+                @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
-                                    "{ \"ошибка\": \"Пользователь или книга не найдены\" }"))),
+                            "{\"ошибка\":\"Пользователь или книга не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @DeleteMapping("/{userId}/books/{bookId}")
     public ResponseEntity<Void> removeBookFromUser(
@@ -292,77 +296,77 @@ public class UserController {
                     (message = "ID пользователя должен быть положительным числом") Long userId,
             @PathVariable @Positive
                     (message = "ID книги должен быть положительным числом") Long bookId) {
-        log.debug("Удаление книги {} у пользователя {}", bookId, userId);
+        log.debug("Удаление книги у пользователя");
 
         Book book = new Book();
         book.setId(bookId);
         userService.removeBookFromUser(userId, book);
 
-        log.info("Книга {} успешно удалена у пользователя {}", bookId, userId);
+        log.info("Книга успешно удалена");
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Получить пользователей по названию книги",
-            description = "Возвращает пользователей, связанных с названием книги", responses = {
+    @Operation(summary = "Получить пользователей по книге",
+            description = "Возвращает пользователей, связанных с книгой",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Пользователи найдены",
-                            content = @Content(array = @ArraySchema
-                                    (schema = @Schema(implementation = User.class)))),
-                @ApiResponse(responseCode = "400", description = "Некорректный параметр названия",
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = User.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректное название",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Название не может быть пустым\"}"))),
+                @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
-                                            "{ \"ошибка\": \"Название не может быть пустым\" }"))),
-                @ApiResponse(responseCode = "404",
-                        description = "Книга не найдена или нет связанных пользователей",
-                            content = @Content(schema = @Schema(example =
-                                    "{ \"ошибка\": \"Книга не найдена или нет пользователей\" }"))),
+                            "{\"ошибка\":\"Книга или пользователи не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/by-book-title")
     public ResponseEntity<List<User>> getUsersByBookTitle(
             @RequestParam @NotBlank(message = "Название книги не может быть пустым") String title) {
-        log.debug("Поиск пользователей по названию книги: {}", title);
+        log.debug("Поиск пользователей по книге");
 
         List<User> users = userRepository.findUsersByBookTitle(title);
 
         if (users.isEmpty()) {
-            log.warn("Книга с названием '{}' не найдена или у неё нет авторов", title);
-            throw new UserNotFoundException("Книга с названием '"
-                    + title + "' не найдена или у неё нет авторов");
+            log.warn("Данные не найдены");
+            throw new UserNotFoundException("Данные не найдены");
         }
 
-        log.info("Найдено {} пользователей по книге '{}'", users.size(), title);
+        log.info("Найдено {} пользователей", users.size());
         return ResponseEntity.ok(users);
     }
 
-    @Operation(summary = "Получить авторов по названию книги",
-            description = "Возвращает авторов книги по названию", responses = {
+    @Operation(summary = "Получить авторов книги",
+            description = "Возвращает авторов книги по названию",
+            responses = {
                 @ApiResponse(responseCode = "200", description = "Авторы найдены",
-                            content = @Content(array = @ArraySchema
-                                    (schema = @Schema(implementation = User.class)))),
-                @ApiResponse(responseCode = "400", description = "Некорректный параметр названия",
-                            content = @Content(schema = @Schema(example =
-                                            "{ \"ошибка\": \"Название не может быть пустым\" }"))),
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = User.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректное название",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Название не может быть пустым\"}"))),
                 @ApiResponse(responseCode = "404", description = "Авторы не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Авторы не найдены\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Авторы не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/by-book-title")
     public ResponseEntity<List<User>> getAuthorsByBookTitle(
             @RequestParam @NotBlank(message = "Название книги не может быть пустым") String title) {
-        log.debug("Поиск авторов по названию книги: {}", title);
+        log.debug("Поиск авторов книги");
 
         List<User> authors = userRepository.findAuthorsByBookTitle(title);
 
         if (authors.isEmpty()) {
-            log.warn("Авторы книги с названием '{}' не найдены", title);
-            throw new UserNotFoundException("Авторы книги с названием '" + title + "' не найдены");
+            log.warn("Авторы не найдены");
+            throw new UserNotFoundException("Авторы не найдены");
         }
 
-        log.info("Найдено {} авторов книги '{}'", authors.size(), title);
+        log.info("Найдено {} авторов", authors.size());
         return ResponseEntity.ok(authors);
     }
 }

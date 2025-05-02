@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/books")
 @Validated
-@Tag(name = "Book Management", description = "API для управления книгами")
+@Tag(name = "Управление книгами", description = "API для управления книгами")
 public class BookController {
     private static final Logger log = LoggerFactory.getLogger(BookController.class);
     private final BookService bookService;
@@ -48,192 +48,201 @@ public class BookController {
         this.userService = userService;
     }
 
-    @Operation(summary = "Запрос всех книг", description = "Вернуть все существующие книги",
+    @Operation(summary = "Получить все книги", description = "Возвращает список всех книг",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Вернулись все книги"),
+                @ApiResponse(responseCode = "200", description = "Список книг получен",
+                            content = @Content(schema = @Schema(implementation = List.class))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping
     public ResponseEntity<List<Book>> getAllBooks() {
-        log.debug("Запрос всех книг");
+        log.debug("Обработка запроса всех книг");
         List<Book> books = bookService.getAllBooks();
-        log.info("Найдено {} книг", books.size());
+        log.info("Успешно возвращено {} книг", books.size());
         return ResponseEntity.ok(books);
     }
 
-    @Operation(summary = "Запрос книг по id", description = "Вернуть книги по id",
+    @Operation(summary = "Получить книгу по ID", description = "Возвращает книгу по указанному ID",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Книга найдена"),
+                @ApiResponse(responseCode = "200", description = "Книга найдена",
+                            content = @Content(schema = @Schema(implementation = Book.class))),
                 @ApiResponse(responseCode = "404", description = "Книга не найдена",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книга не найдена\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга не найдена\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable @Positive
             (message = "ID книги должен быть положительным числом") Long id) {
-        log.debug("Запрос книги с ID: {}", id);
+        log.debug("Обработка запроса книги с ID");
 
         if (!bookService.isCachedOrExists(id)) {
-            log.warn("Книга с ID {} не найдена", id);
-            throw new BookNotFoundException("Книга с ID " + id + " не найдена");
+            log.warn("Запрошенная книга не найдена");
+            throw new BookNotFoundException("Книга не найдена");
         }
 
         Book book = bookService.getBookById(id)
                 .orElseThrow(() -> {
-                    log.error("Книга с ID {} не найдена в сервисе", id);
-                    return new BookNotFoundException("Книга с id " + id + " не найдена");
+                    log.error("Ошибка при поиске книги в сервисе");
+                    return new BookNotFoundException("Книга не найдена");
                 });
 
-        log.info("Найдена книга: {}", book);
+        log.info("Книга успешно найдена");
         return ResponseEntity.ok(book);
     }
 
-    @Operation(summary = "Создать книгу с автором", description =
-            "Создать новую книгу с определенным автором", responses = {
-                @ApiResponse(responseCode = "201", description = "Книга успешно создана"),
+    @Operation(summary = "Создать книгу с автором",
+            description = "Создает новую книгу с указанным автором",
+            responses = {
+                @ApiResponse(responseCode = "201", description = "Книга успешно создана",
+                            content = @Content(schema = @Schema(implementation = Book.class))),
                 @ApiResponse(responseCode = "404", description = "Автор не найден",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Автор не найден\" }"))),
-                @ApiResponse(responseCode = "400", description = "Некорректные входные данные",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректные входные данные\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Автор не найден\"}"))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PostMapping("/{authorId}/book")
-    public ResponseEntity<Book> createBookWithAuthor(
-            @PathVariable @Positive(message = "ID автора должен быть положительным числом")
-            Long authorId, @Valid @RequestBody Book book) {
-        log.debug("Создание книги {} для автора с ID {}", book, authorId);
+    public ResponseEntity<Book> createBookWithAuthor(@PathVariable @Positive
+            (message = "ID автора должен быть положительным числом") Long authorId,
+            @Valid @RequestBody Book book) {
+        log.debug("Обработка создания новой книги");
 
         Book savedBook = bookService.createBookWithAuthor(authorId, book);
 
-        log.info("Создана новая книга с ID: {}", savedBook.getId());
+        log.info("Новая книга успешно создана");
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBook);
     }
 
-    @Operation(summary = "Обновить книгу", description = "Обновить существующую книгу",
+    @Operation(summary = "Обновить книгу", description = "Обновляет существующую книгу",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Книга успешно обновлена"),
+                @ApiResponse(responseCode = "200", description = "Книга успешно обновлена",
+                            content = @Content(schema = @Schema(implementation = Book.class))),
                 @ApiResponse(responseCode = "404", description = "Книга не найдена",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книга не найдена\" }"))),
-                @ApiResponse(responseCode = "400", description = "Некорректные входные данные",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Некорректные входные данные\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга не найдена\"}"))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PutMapping("/{id}")
     public ResponseEntity<Book> updateBook(
             @PathVariable @Positive(message = "ID книги должен быть положительным числом") Long id,
             @Valid @RequestBody Book updatedBook) {
-        log.debug("Обновление книги с ID {}: {}", id, updatedBook);
+        log.debug("Обработка обновления книги");
 
         Book book = bookService.updateBook(id, updatedBook);
 
-        log.info("Книга с ID {} успешно обновлена", id);
+        log.info("Книга успешно обновлена");
         return ResponseEntity.ok(book);
     }
 
-    @Operation(summary = "Удаление книги", description = "Удаление книги по id",
+    @Operation(summary = "Удалить книгу", description = "Удаляет книгу по ID",
             responses = {
                 @ApiResponse(responseCode = "204", description = "Книга успешно удалена"),
                 @ApiResponse(responseCode = "404", description = "Книга не найдена",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Book not found\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга не найдена\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable @Positive(message =
-            "ID книги должен быть положительным числом") Long id) {
-        log.debug("Удаление книги с ID: {}", id);
+    public ResponseEntity<Void> deleteBook(@PathVariable @Positive
+                    (message = "ID книги должен быть положительным числом") Long id) {
+        log.debug("Обработка удаления книги");
 
         if (!bookService.isCachedOrExists(id)) {
-            log.warn("Попытка удаления несуществующей книги с ID {}", id);
-            throw new BookNotFoundException("Книга с ID " + id + " не найдена");
+            log.warn("Попытка удаления несуществующей книги");
+            throw new BookNotFoundException("Книга не найдена");
         }
 
         bookService.deleteBook(id);
-        log.info("Книга с ID {} успешно удалена", id);
+        log.info("Книга успешно удалена");
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Поиск книг по названию", description =
-            "Вернуть книги по названию", responses = {
-                @ApiResponse(responseCode = "200", description = "Книги найдены"),
+    @Operation(summary = "Поиск книг по названию",
+            description = "Возвращает книги по указанному названию",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Книги найдены",
+                            content = @Content(schema = @Schema(implementation = List.class))),
                 @ApiResponse(responseCode = "404", description = "Книги не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Books not found\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книги не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/title")
     public ResponseEntity<List<Book>> searchBooksByTitle(
             @RequestParam @NotBlank(message = "Название книги не может быть пустым") String title) {
-        log.debug("Поиск книг по названию: {}", title);
+        log.debug("Обработка поиска книг по названию");
 
         List<Book> books = bookService.findBooksByTitle(title);
 
         if (books.isEmpty()) {
-            log.warn("Книги с названием '{}' не найдены", title);
-            throw new BookNotFoundException("Книги с названием '" + title + "' не найдены");
+            log.warn("Книги по запросу не найдены");
+            throw new BookNotFoundException("Книги не найдены");
         }
 
-        log.info("Найдено {} книг с названием '{}'", books.size(), title);
+        log.info("Найдено {} книг по запросу", books.size());
         return ResponseEntity.ok(books);
     }
 
-    @Operation(summary = "Поиск книг по автору", description =
-            "Вернуть книги по автору", responses = {
-                @ApiResponse(responseCode = "200", description = "Книги найдены"),
+    @Operation(summary = "Поиск книг по автору",
+            description = "Возвращает книги по указанному автору",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Книги найдены",
+                            content = @Content(schema = @Schema(implementation = List.class))),
                 @ApiResponse(responseCode = "404", description = "Книги не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книги не найдены\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книги не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/author")
     public ResponseEntity<List<Book>> searchBooksByAuthor(
             @RequestParam @NotBlank(message = "Имя автора не может быть пустым") String author) {
-        log.debug("Поиск книг по автору: {}", author);
+        log.debug("Обработка поиска книг по автору");
 
         List<Book> books = bookService.findBooksByAuthor(author);
 
         if (books.isEmpty()) {
-            log.warn("Книги автора '{}' не найдены", author);
-            throw new BookNotFoundException("Книги автора '" + author + "' не найдены");
+            log.warn("Книги автора не найдены");
+            throw new BookNotFoundException("Книги не найдены");
         }
 
-        log.info("Найдено {} книг автора '{}'", books.size(), author);
+        log.info("Найдено {} книг автора", books.size());
         return ResponseEntity.ok(books);
     }
 
-    // ИЗМЕНИТЬ ФИЛЬТРАЦИЮ ПО ГОДУ ПУБЛИКАЦИИ!!!!!!!!!!!!!!!!!!!!
-    @Operation(summary = "Поиск по дате публикации", description =
-            "Вернуть книги по дате публикации", responses = {
-                @ApiResponse(responseCode = "200", description = "Книги найдены"),
+    @Operation(summary = "Поиск книг по году публикации",
+            description = "Возвращает книги по указанному году публикации",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Книги найдены",
+                            content = @Content(schema = @Schema(implementation = List.class))),
                 @ApiResponse(responseCode = "404", description = "Книги не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книги не найдены\" }"))),
-                @ApiResponse(responseCode = "400",
-                        description = "Некорректный ввод года публикации",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книги не найдены\"}"))),
+                @ApiResponse(responseCode = "400", description = "Некорректный год",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректный год\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/year")
     public ResponseEntity<List<Book>> searchBooksByYear(
@@ -241,116 +250,118 @@ public class BookController {
             @Min(value = 1000, message = "Год должен быть не меньше 1000")
             @Max(value = 2100, message = "Год должен быть не больше 2100")
             Long year) {
-        log.debug("Поиск книг по году публикации: {}", year);
+        log.debug("Обработка поиска книг по году");
 
         List<Book> books = bookService.findBooksByPublicYear(year);
 
         if (books.isEmpty()) {
-            log.warn("Книги за {} год не найдены", year);
-            throw new BookNotFoundException("Книги за " + year + " год не найдены");
+            log.warn("Книги за указанный год не найдены");
+            throw new BookNotFoundException("Книги не найдены");
         }
 
-        log.info("Найдено {} книг за {} год", books.size(), year);
+        log.info("Найдено {} книг за указанный год", books.size());
         return ResponseEntity.ok(books);
     }
 
-    @Operation(summary = "Поиск по статусу выхода книги",
-            description = "Вернуть книги по статусу выхода", responses = {
-                @ApiResponse(responseCode = "200", description = "Книги найдены"),
+    @Operation(summary = "Поиск книг по статусу",
+            description = "Возвращает книги по указанному статусу",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Книги найдены",
+                            content = @Content(schema = @Schema(implementation = List.class))),
                 @ApiResponse(responseCode = "404", description = "Книги не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книги не найдены\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книги не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/search/status")
     public ResponseEntity<List<Book>> searchBooksByStatus(@RequestParam @NotNull
             (message = "Статус книги не может быть null") BookStatus bookStatus) {
-        log.debug("Поиск книг по статусу: {}", bookStatus);
+        log.debug("Обработка поиска книг по статусу");
 
         List<Book> books = bookService.findBooksByStatus(bookStatus);
 
         if (books.isEmpty()) {
-            log.warn("Книги со статусом '{}' не найдены", bookStatus);
-            throw new BookNotFoundException("Книги со статусом '" + bookStatus + "' не найдены");
+            log.warn("Книги с указанным статусом не найдены");
+            throw new BookNotFoundException("Книги не найдены");
         }
 
-        log.info("Найдено {} книг со статусом '{}'", books.size(), bookStatus);
+        log.info("Найдено {} книг с указанным статусом", books.size());
         return ResponseEntity.ok(books);
     }
 
-    @Operation(summary = "Add author to bookДобавить автора к книге",
-            description = "Добавление автора к книге", responses = {
-                @ApiResponse(responseCode = "204", description = "Автор добавлен успешно"),
+    @Operation(summary = "Добавить автора к книге",
+            description = "Добавляет автора к указанной книге",
+            responses = {
+                @ApiResponse(responseCode = "204", description = "Автор успешно добавлен"),
                 @ApiResponse(responseCode = "404", description = "Книга или автор не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Книга или автор не найдены\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга или автор не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PostMapping("/{bookId}/authors/{authorId}")
     public ResponseEntity<Void> addAuthorToBook(@PathVariable @Positive
-            (message = "ID книги должен быть положительным числом")
-            Long bookId, @PathVariable @Positive
-            (message = "ID автора должен быть положительным числом")
-            Long authorId) {
-        log.debug("Добавление автора {} к книге {}", authorId, bookId);
+                    (message = "ID книги должен быть положительным числом") Long bookId,
+            @PathVariable @Positive
+                    (message = "ID автора должен быть положительным числом") Long authorId) {
+        log.debug("Обработка добавления автора к книге");
 
         Book book = bookService.getBookById(bookId).orElseThrow(() -> {
-            log.error("Книга с ID {} не найдена", bookId);
-            return new BookNotFoundException("Книга с id " + bookId + " не найдена");
+            log.error("Книга не найдена");
+            return new BookNotFoundException("Книга не найдена");
         });
 
         User author = userService.getUserById(authorId).orElseThrow(() -> {
-            log.error("Автор с ID {} не найден", authorId);
-            return new UserNotFoundException("Автор с id " + authorId + " не найден");
+            log.error("Автор не найден");
+            return new UserNotFoundException("Автор не найден");
         });
 
         book.addAuthor(author);
         bookService.saveBook(book);
 
-        log.info("Автор {} успешно добавлен к книге {}", authorId, bookId);
+        log.info("Автор успешно добавлен к книге");
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Удалить автора из книги",
-            description = "Удаляет автора из определенной книги", responses = {
+            description = "Удаляет автора из указанной книги",
+            responses = {
                 @ApiResponse(responseCode = "204", description = "Автор успешно удален"),
                 @ApiResponse(responseCode = "404", description = "Книга или автор не найдены",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Book or author not found\" }"))),
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга или автор не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema
-                                    (example = "{ \"ошибка\": \"Внутренняя ошибка сервера\" }")))
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @DeleteMapping("/{bookId}/authors/{authorId}")
-    public ResponseEntity<Void> removeAuthorFromBook(
+    public ResponseEntity<Void> removeAuthorFromBook(@PathVariable @Positive
+            (message = "ID книги должен быть положительным числом") Long bookId,
             @PathVariable @Positive
-                    (message = "ID книги должен быть положительным числом") Long bookId,
-            @PathVariable @Positive
-                    (message = "ID автора должен быть положительным числом") Long authorId) {
-        log.debug("Удаление автора {} из книги {}", authorId, bookId);
+            (message = "ID автора должен быть положительным числом") Long authorId) {
+        log.debug("Обработка удаления автора из книги");
 
         Book book = bookService.getBookById(bookId).orElseThrow(() -> {
-            log.error("Книга с ID {} не найдена", bookId);
-            return new BookNotFoundException("Книга с id " + bookId + " не найдена");
+            log.error("Книга не найдена");
+            return new BookNotFoundException("Книга не найдена");
         });
 
         User author = userService.getUserById(authorId).orElseThrow(() -> {
-            log.error("Автор с ID {} не найден", authorId);
-            return new UserNotFoundException("Автор с id " + authorId + " не найден");
+            log.error("Автор не найден");
+            return new UserNotFoundException("Автор не найден");
         });
 
         book.removeAuthor(author);
 
         if (book.getAuthors().isEmpty()) {
-            log.info("Удаление книги {}, так как у нее не осталось авторов", bookId);
+            log.info("Удаление книги без авторов");
             bookService.deleteBook(bookId);
         } else {
             bookService.saveBook(book);
-            log.info("Автор {} удален из книги {}", authorId, bookId);
+            log.info("Автор успешно удален из книги");
         }
 
         return ResponseEntity.noContent().build();
