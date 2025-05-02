@@ -1,5 +1,6 @@
 package com.univer.bookcom.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,6 +10,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +23,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Имя пользователя не может быть пустым")
+    @Size(max = 100, message = "Имя пользователя не может превышать 100 символов")
     private String name;
+
+    @NotBlank(message = "Email не может быть пустым")
+    @Email(message = "Некорректный формат email")
     private String email;
+
+    @NotBlank(message = "Пароль не может быть пустым")
+    @Size(min = 6, message = "Пароль должен содержать не менее 6 символов")
     private String password;
 
     @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY,

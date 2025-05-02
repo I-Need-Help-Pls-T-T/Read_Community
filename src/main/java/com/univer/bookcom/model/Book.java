@@ -14,6 +14,9 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,8 +27,14 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Название книги не может быть пустым")
     private String title;
+
+    @Min(value = 0, message = "Количество глав должно быть не менее 1")
     private long countChapters;
+
+    @Min(value = 1000, message = "Год публикации должен быть не ранее 1000")
+    @Max(value = 2100, message = "Год публикации должен быть не позднее 2100")
     private long publicYear;
 
     @Enumerated(EnumType.STRING)

@@ -121,10 +121,6 @@ public class BookService {
         return finalSaved;
     }
 
-    public boolean existsById(Long id) {
-        return bookRepository.existsById(id);
-    }
-
     public boolean isCachedOrExists(Long id) {
         return bookCache.containsKey(id) || bookRepository.existsById(id);
     }

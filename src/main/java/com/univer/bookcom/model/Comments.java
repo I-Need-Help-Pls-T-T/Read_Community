@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,10 +22,12 @@ public class Comments {
     private long id;
 
     @NotBlank(message = "Текст комментария не может быть пустым")
+    @Size(max = 1000, message = "Комментарий не может превышать 1000 символов")
+    @Column(nullable = false, length = 1000)
     private String text;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -36,25 +39,12 @@ public class Comments {
     @JsonIgnore
     private Book book;
 
-
     public long getId() {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getText() {
-        return text;
-    }
-
     public void setText(String text) {
         this.text = text;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

@@ -19,11 +19,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // JPQL запрос
     @Query("SELECT u FROM User u JOIN u.books b WHERE b.title = :title")
     List<User> findAuthorsByBookTitle(@Param("title") String title);
-
-    // Native SQL
-    @Query(value = "SELECT u.* FROM users u "
-            + "JOIN book_user bu ON u.id = bu.user_id "
-            + "JOIN books b ON bu.book_id = b.id "
-            + "WHERE b.title = :title", nativeQuery = true)
-    List<User> findAuthorsByBookTitleNative(@Param("title") String title);
 }
