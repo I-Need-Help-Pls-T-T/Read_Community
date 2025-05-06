@@ -104,9 +104,10 @@ class UserServiceTest {
     @Test
     void testUpdateUser_notFound_throwsException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        User userToUpdate = new User();
 
         assertThrows(UserNotFoundException.class, () ->
-                userService.updateUser(1L, new User()));
+                userService.updateUser(1L, userToUpdate));
     }
 
     @Test
