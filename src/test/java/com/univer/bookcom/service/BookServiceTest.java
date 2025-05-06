@@ -223,7 +223,7 @@ class BookServiceTest {
 
             when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> {
                 Book input = invocation.getArgument(0);
-                input.setId(bookId); // Устанавливаем ID, иначе будет NPE
+                input.setId(bookId);
                 return input;
             });
 

@@ -1,5 +1,6 @@
 package com.univer.bookcom.service;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,23 +59,36 @@ class CommentsServiceTest {
 
     @BeforeEach
     void setUp() {
-        testBook = new Book();
-        testBook.setId(1L);
-        testBook.setTitle("Test Book");
-
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setName("testuser");
-
-        testComment = new Comments();
-        testComment.setId(1L);
-        testComment.setText("Test comment");
-        testComment.setCreatedAt(LocalDateTime.now());
-        testComment.setBook(testBook);
-        testComment.setUser(testUser);
-
+        testBook = createTestBook();
+        testUser = createTestUser();
+        testComment = createTestComment();
         commentsCache = new ConcurrentHashMap<>();
+
         lenient().when(cacheContainer.getCommentsCache()).thenReturn(commentsCache);
+    }
+
+    private Book createTestBook() {
+        Book book = new Book();
+        book.setId(1L);
+        book.setTitle("Test Book");
+        return book;
+    }
+
+    private User createTestUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setName("testuser");
+        return user;
+    }
+
+    private Comments createTestComment() {
+        Comments comment = new Comments();
+        comment.setId(1L);
+        comment.setText("Test comment");
+        comment.setCreatedAt(LocalDateTime.now());
+        comment.setBook(testBook);
+        comment.setUser(testUser);
+        return comment;
     }
 
     @Test
@@ -85,28 +99,30 @@ class CommentsServiceTest {
 
         Comments result = commentsService.createComment(1L, 1L, "Test comment");
 
-        assertNotNull(result);
-        assertEquals("Test comment", result.getText());
-        assertEquals(testBook, result.getBook());
-        assertEquals(testUser, result.getUser());
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals("Test comment", result.getText()),
+                () -> assertEquals(testBook, result.getBook()),
+                () -> assertEquals(testUser, result.getUser()),
+                () -> assertTrue(commentsCache.containsKey(1L)),
+                () -> assertEquals(testComment, commentsCache.get(1L).getValue())
+        );
 
         verify(bookRepository).findById(1L);
         verify(userRepository).findById(1L);
         verify(commentsRepository).save(any(Comments.class));
-        assertTrue(commentsCache.containsKey(1L));
-        assertEquals(testComment, commentsCache.get(1L).getValue());
     }
 
     @Test
     void createComment_ShouldThrowBookNotFoundException() {
         when(bookRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(BookNotFoundException.class, () ->
-                commentsService.createComment(1L, 1L, "Test comment"));
+        Exception exception = assertThrows(BookNotFoundException.class,
+                () -> commentsService.createComment(1L, 1L, "Test comment"));
 
+        assertNotNull(exception);
         verify(bookRepository).findById(1L);
-        verifyNoInteractions(userRepository);
-        verifyNoInteractions(commentsRepository);
+        verifyNoInteractions(userRepository, commentsRepository);
         assertFalse(commentsCache.containsKey(1L));
     }
 
@@ -116,9 +132,11 @@ class CommentsServiceTest {
 
         List<Comments> result = commentsService.getCommentsByBookId(1L);
 
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(testComment, result.get(0));
+        assertAll(
+                () -> assertFalse(result.isEmpty()),
+                () -> assertEquals(1, result.size()),
+                () -> assertEquals(testComment, result.get(0))
+        );
 
         verify(commentsRepository).findByBookId(1L);
         verifyNoInteractions(cacheContainer);
@@ -126,24 +144,31 @@ class CommentsServiceTest {
 
     @Test
     void updateComment_ShouldUpdateAndReturnComment() {
-        Comments updatedComment = new Comments();
-        updatedComment.setId(1L);
-        updatedComment.setText("Updated comment");
-        updatedComment.setBook(testBook);
-        updatedComment.setUser(testUser);
+        Comments updatedComment = createUpdatedComment();
 
         when(commentsRepository.findById(1L)).thenReturn(Optional.of(testComment));
         when(commentsRepository.save(any(Comments.class))).thenReturn(updatedComment);
 
         Comments result = commentsService.updateComment(1L, "Updated comment");
 
-        assertNotNull(result);
-        assertEquals("Updated comment", result.getText());
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals("Updated comment", result.getText()),
+                () -> assertTrue(commentsCache.containsKey(1L)),
+                () -> assertEquals(updatedComment, commentsCache.get(1L).getValue())
+        );
 
         verify(commentsRepository).findById(1L);
         verify(commentsRepository).save(any(Comments.class));
-        assertTrue(commentsCache.containsKey(1L));
-        assertEquals(updatedComment, commentsCache.get(1L).getValue());
+    }
+
+    private Comments createUpdatedComment() {
+        Comments comment = new Comments();
+        comment.setId(1L);
+        comment.setText("Updated comment");
+        comment.setBook(testBook);
+        comment.setUser(testUser);
+        return comment;
     }
 
     @Test
