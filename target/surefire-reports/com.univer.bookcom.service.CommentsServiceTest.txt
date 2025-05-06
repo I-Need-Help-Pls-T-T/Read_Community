@@ -1,0 +1,39 @@
+-------------------------------------------------------------------------------
+Test set: com.univer.bookcom.service.CommentsServiceTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.015 s <<< FAILURE! -- in com.univer.bookcom.service.CommentsServiceTest
+com.univer.bookcom.service.CommentsServiceTest.createComment_ShouldCreateAndReturnComment -- Time elapsed: 0.015 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.univer.bookcom.cache.CacheContainer.getCommentsCache()" because "this.cacheContainer" is null
+	at com.univer.bookcom.service.CommentsServiceTest.setUp(CommentsServiceTest.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.univer.bookcom.service.CommentsServiceTest.deleteComment_ShouldDeleteComment -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.univer.bookcom.cache.CacheContainer.getCommentsCache()" because "this.cacheContainer" is null
+	at com.univer.bookcom.service.CommentsServiceTest.setUp(CommentsServiceTest.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.univer.bookcom.service.CommentsServiceTest.getCommentsByBookId_ShouldReturnCommentsList -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.univer.bookcom.cache.CacheContainer.getCommentsCache()" because "this.cacheContainer" is null
+	at com.univer.bookcom.service.CommentsServiceTest.setUp(CommentsServiceTest.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.univer.bookcom.service.CommentsServiceTest.updateComment_ShouldUpdateAndReturnComment -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.univer.bookcom.cache.CacheContainer.getCommentsCache()" because "this.cacheContainer" is null
+	at com.univer.bookcom.service.CommentsServiceTest.setUp(CommentsServiceTest.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.univer.bookcom.service.CommentsServiceTest.createComment_ShouldThrowBookNotFoundException -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.univer.bookcom.cache.CacheContainer.getCommentsCache()" because "this.cacheContainer" is null
+	at com.univer.bookcom.service.CommentsServiceTest.setUp(CommentsServiceTest.java:74)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

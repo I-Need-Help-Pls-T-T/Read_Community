@@ -210,7 +210,7 @@ class BookServiceTest {
 
     @Test
     void testCacheEvictionWhenFull() {
-        BookService bookService = new BookService(bookRepository, userService, cacheContainer);
+        BookService testBookService = new BookService(bookRepository, userService, cacheContainer);
 
         for (int i = 1; i <= 4; i++) {
             Book book = new Book();
@@ -227,7 +227,7 @@ class BookServiceTest {
                 return input;
             });
 
-            bookService.saveBook(book);
+            testBookService.saveBook(book);
         }
 
         assertEquals(3, cacheContainer.getBookCache().size());
