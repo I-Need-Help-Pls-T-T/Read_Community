@@ -11,12 +11,15 @@ import com.univer.bookcom.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-    private static final String userNot = "Пользователь с id ";
-    private static final String bookNot = " не найден";
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final String USER_NOT_FOUND = "Пользователь с id %d не найден";
+
     private final UserRepository userRepository;
     private final CommentsRepository commentsRepository;
     private final BookRepository bookRepository;
@@ -39,7 +42,7 @@ public class UserService {
     public Optional<User> getUserById(Long id) {
         Map<Long, CacheEntry<User>> cache = cacheContainer.getUserCache();
         if (cache.containsKey(id)) {
-            System.out.println("Пользователь найден в кэше: id = " + id);
+            log.debug("Пользователь найден в кэше: id = {}", id);
             return Optional.of(cache.get(id).getValue());
         }
 
@@ -63,28 +66,28 @@ public class UserService {
                     User updated = userRepository.save(user);
                     cacheContainer.getUserCache().put(id, new CacheEntry<>(updated));
                     return updated;
-                }).orElseThrow(() ->
-                        new UserNotFoundException(userNot + id + bookNot));
+                })
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, id)));
     }
 
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() ->
-                new UserNotFoundException(userNot + id + bookNot));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, id)));
 
         commentsRepository.deleteAll(user.getComments());
 
-        for (Book book : user.getBooks()) {
+        user.getBooks().forEach(book -> {
             book.getAuthors().remove(user);
             if (book.getAuthors().isEmpty()) {
                 bookRepository.delete(book);
             } else {
                 bookRepository.save(book);
             }
-        }
+        });
 
         userRepository.delete(user);
         cacheContainer.getUserCache().remove(id);
-        System.out.println("Удаление пользователя вручную из кэша: id = " + id);
+        log.debug("Удаление пользователя из кэша: id = {}", id);
     }
 
     public List<User> findUsersByName(String name) {
@@ -96,16 +99,16 @@ public class UserService {
     }
 
     public void addBookToUser(Long userId, Book book) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new UserNotFoundException(userNot + userId + bookNot));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
         user.addBook(book);
         User updated = userRepository.save(user);
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
     }
 
     public void removeBookFromUser(Long userId, Book book) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new UserNotFoundException(userNot + userId + bookNot));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
         user.removeBook(book);
         User updated = userRepository.save(user);
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
