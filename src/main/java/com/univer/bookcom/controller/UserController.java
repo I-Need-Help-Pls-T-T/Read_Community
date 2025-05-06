@@ -16,7 +16,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -369,4 +371,89 @@ public class UserController {
         log.info("Найдено {} авторов", authors.size());
         return ResponseEntity.ok(authors);
     }
+
+    @Operation(summary = "Создать несколько пользователей",
+            description = "Создает несколько пользователей за один запрос",
+            responses = {
+                @ApiResponse(responseCode = "201", description = "Пользователи успешно созданы",
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = User.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
+                @ApiResponse(responseCode = "409", description = "Конфликт email",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Email уже существует\"}"))),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
+            })
+    @PostMapping("/bulk")
+    public ResponseEntity<List<User>> createUsersBulk(@Valid @RequestBody List<User> users) {
+        log.debug("Обработка bulk-запроса на создание {} пользователей", users.size());
+
+        List<String> emails = users.stream().map(User::getEmail)
+                .collect(Collectors.toList());
+
+        if (emails.size() != new HashSet<>(emails).size()) {
+            log.error("Обнаружены дубликаты email в запросе");
+            throw new IllegalArgumentException("Email пользователей должны быть уникальными");
+        }
+
+        List<String> existingEmails = emails.stream()
+                .filter(email -> userService.findUserByEmail(email).isPresent())
+                .collect(Collectors.toList());
+
+        if (!existingEmails.isEmpty()) {
+            log.error("Email уже существуют: {}", existingEmails);
+            throw new IllegalArgumentException("Email уже существуют: " + existingEmails);
+        }
+
+        List<User> createdUsers = users.stream()
+                .map(user -> {
+                    try {
+                        return userService.saveUser(user);
+                    } catch (Exception e) {
+                        log.error("Ошибка при создании пользователя: {}", e.getMessage());
+                        throw e;
+                    }
+                })
+                .collect(Collectors.toList());
+
+        log.info("Успешно создано {} пользователей", createdUsers.size());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
+    }
+
+    @Operation(summary = "Добавить несколько книг пользователю",
+            description = "Добавляет несколько книг в коллекцию пользователя",
+            responses = {
+                @ApiResponse(responseCode = "204", description = "Книги успешно добавлены"),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
+                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
+            })
+    @PostMapping("/{userId}/books/bulk")
+    public ResponseEntity<Void> addBooksToUser(
+            @PathVariable @Positive(message = "ID пользователя должен быть положительным числом")
+            Long userId, @Valid @RequestBody List<Book> books) {
+        log.debug("Обработка bulk-запроса на добавление {} книг пользователю", books.size());
+
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> {
+                    log.error("Пользователь не найден");
+                    return new UserNotFoundException("Пользователь не найден");
+                });
+
+        books.forEach(book -> userService.addBookToUser(userId, book));
+
+        log.info("Успешно добавлено {} книг пользователю", books.size());
+        return ResponseEntity.noContent().build();
+    }
+
 }

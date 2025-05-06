@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,6 @@ public class CommentsController {
     }
 
     @Operation(summary = "Создать комментарий",
-            description = "Создаёт новый комментарий к книге от пользователя",
             responses = {
                 @ApiResponse(responseCode = "201", description = "Комментарий успешно создан",
                             content = @Content(schema = @Schema(implementation = Comments.class))),
@@ -62,16 +62,14 @@ public class CommentsController {
                     (message = "ID пользователя должен быть положительным числом") Long userId,
             @RequestParam @NotBlank
                     (message = "Текст комментария не может быть пустым") String text) {
-        log.debug("Создание нового комментария");
-
+        log.debug("Запрос на создание комментария для книги ID: {}, пользователя ID: {}",
+                bookId, userId);
         Comments comment = commentsService.createComment(bookId, userId, text);
-
-        log.info("Комментарий успешно создан");
+        log.info("Создан комментарий ID: {}", comment.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 
     @Operation(summary = "Получить комментарии по книге",
-            description = "Возвращает все комментарии для указанной книги",
             responses = {
                 @ApiResponse(responseCode = "200", description = "Комментарии найдены",
                             content = @Content(array = @ArraySchema(
@@ -84,23 +82,22 @@ public class CommentsController {
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @GetMapping("/book/{bookId}")
-    public ResponseEntity<List<Comments>> getCommentsByBookId(@PathVariable @Positive
-            (message = "ID книги должен быть положительным числом") Long bookId) {
-        log.debug("Запрос комментариев для книги");
-
+    public ResponseEntity<List<Comments>> getCommentsByBookId(
+            @PathVariable @Positive
+                    (message = "ID книги должен быть положительным числом") Long bookId) {
+        log.debug("Запрос комментариев для книги ID: {}", bookId);
         List<Comments> comments = commentsService.getCommentsByBookId(bookId);
 
         if (comments.isEmpty()) {
-            log.warn("Комментарии не найдены");
+            log.warn("Комментарии для книги ID: {} не найдены", bookId);
             throw new CommentNotFoundException("Комментарии не найдены");
         }
 
-        log.info("Найдено {} комментариев", comments.size());
+        log.info("Найдено {} комментариев для книги ID: {}", comments.size(), bookId);
         return ResponseEntity.ok(comments);
     }
 
     @Operation(summary = "Получить комментарии по пользователю",
-            description = "Возвращает все комментарии указанного пользователя",
             responses = {
                 @ApiResponse(responseCode = "200", description = "Комментарии найдены",
                             content = @Content(array = @ArraySchema(
@@ -114,22 +111,20 @@ public class CommentsController {
             })
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Comments>> getCommentsByUserId(@PathVariable @Positive
-            (message = "ID пользователя должен быть положительным числом") Long userId) {
-        log.debug("Запрос комментариев пользователя");
-
+                    (message = "ID пользователя должен быть положительным числом") Long userId) {
+        log.debug("Запрос комментариев пользователя ID: {}", userId);
         List<Comments> comments = commentsService.getCommentsByUserId(userId);
 
         if (comments.isEmpty()) {
-            log.warn("Комментарии не найдены");
+            log.warn("Комментарии пользователя ID: {} не найдены", userId);
             throw new CommentNotFoundException("Комментарии не найдены");
         }
 
-        log.info("Найдено {} комментариев", comments.size());
+        log.info("Найдено {} комментариев пользователя ID: {}", comments.size(), userId);
         return ResponseEntity.ok(comments);
     }
 
     @Operation(summary = "Обновить комментарий",
-            description = "Обновляет текст существующего комментария",
             responses = {
                 @ApiResponse(responseCode = "200", description = "Комментарий успешно обновлен",
                             content = @Content(schema = @Schema(implementation = Comments.class))),
@@ -144,21 +139,17 @@ public class CommentsController {
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PutMapping("/{commentId}")
-    public ResponseEntity<Comments> updateComment(
-            @PathVariable @Positive
+    public ResponseEntity<Comments> updateComment(@PathVariable @Positive
                     (message = "ID комментария должен быть положительным числом") Long commentId,
             @RequestParam @NotBlank
                     (message = "Текст комментария не может быть пустым") String newText) {
-        log.debug("Обновление комментария");
-
+        log.debug("Запрос на обновление комментария ID: {}", commentId);
         Comments updatedComment = commentsService.updateComment(commentId, newText);
-
-        log.info("Комментарий успешно обновлен");
+        log.info("Комментарий ID: {} успешно обновлен", commentId);
         return ResponseEntity.ok(updatedComment);
     }
 
     @Operation(summary = "Удалить комментарий",
-            description = "Удаляет комментарий по ID",
             responses = {
                 @ApiResponse(responseCode = "204", description = "Комментарий успешно удален"),
                 @ApiResponse(responseCode = "404", description = "Комментарий не найден",
@@ -171,11 +162,44 @@ public class CommentsController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable @Positive
                     (message = "ID комментария должен быть положительным числом") Long commentId) {
-        log.debug("Удаление комментария");
-
+        log.debug("Запрос на удаление комментария ID: {}", commentId);
         commentsService.deleteComment(commentId);
-
-        log.info("Комментарий успешно удален");
+        log.info("Комментарий ID: {} успешно удален", commentId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Создать несколько комментариев",
+            responses = {
+                @ApiResponse(responseCode = "201", description = "Комментарии успешно созданы",
+                            content = @Content(array = @ArraySchema(
+                                    schema = @Schema(implementation = Comments.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректные данные\"}"))),
+                @ApiResponse(responseCode = "404", description =
+                        "Книга или пользователь не найдены",
+                            content = @Content(schema = @Schema(example =
+                                    "{\"ошибка\":\"Книга или пользователь не найдены\"}"))),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
+            })
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Comments>> createCommentsBulk(
+            @RequestParam @Positive
+                    (message = "ID книги должен быть положительным числом") Long bookId,
+            @RequestParam @Positive
+                    (message = "ID пользователя должен быть положительным числом") Long userId,
+            @RequestParam @NotBlank
+                    (message = "Тексты комментариев не могут быть пустыми") List<String> texts) {
+        log.debug("Bulk-запрос на создание {} комментариев для книги ID: {}, пользователя ID: {}",
+                texts.size(), bookId, userId);
+
+        List<Comments> createdComments = texts.stream()
+                .map(text -> commentsService.createComment(bookId, userId, text))
+                .collect(Collectors.toList());
+
+        log.info("Успешно создано {} комментариев", createdComments.size());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdComments);
     }
 }

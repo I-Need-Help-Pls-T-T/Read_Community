@@ -31,8 +31,8 @@ public class SwaggerConfig {
                                 )
                 )))
                 .info(new Info()
-                        .title("BookShop API")
-                        .description("API documentation for BookShop")
+                        .title("BookCom API")
+                        .description("API documentation for BookCom")
                         .version("1.0.0")
                 )
                 .servers(List.of(new Server().url("/")));

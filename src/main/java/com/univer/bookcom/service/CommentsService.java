@@ -13,12 +13,14 @@ import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CommentsService {
+    private static final Logger log = LoggerFactory.getLogger(CommentsService.class);
+
     private final CommentsRepository commentsRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
@@ -48,15 +50,20 @@ public class CommentsService {
 
         Comments saved = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(saved.getId(), new CacheEntry<>(saved));
+        log.debug("Создан новый комментарий с ID: {}", saved.getId());
         return saved;
     }
 
     public List<Comments> getCommentsByBookId(Long bookId) {
-        return commentsRepository.findByBookId(bookId);
+        List<Comments> comments = commentsRepository.findByBookId(bookId);
+        log.debug("Найдено {} комментариев для книги с ID: {}", comments.size(), bookId);
+        return comments;
     }
 
     public List<Comments> getCommentsByUserId(Long userId) {
-        return commentsRepository.findByUserId(userId);
+        List<Comments> comments = commentsRepository.findByUserId(userId);
+        log.debug("Найдено {} комментариев пользователя с ID: {}", comments.size(), userId);
+        return comments;
     }
 
     public Comments updateComment(Long commentId, String newText) {
@@ -65,6 +72,7 @@ public class CommentsService {
         comment.setText(newText);
         Comments updated = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));
+        log.debug("Обновлен комментарий с ID: {}", commentId);
         return updated;
     }
 
@@ -73,18 +81,6 @@ public class CommentsService {
                 new CommentNotFoundException("Комментарий с id " + commentId + " не найден"));
         commentsRepository.delete(comment);
         cacheContainer.getCommentsCache().remove(commentId);
-        System.out.println("Удаление комментария вручную из кэша: id = " + commentId);
-    }
-
-    public Optional<Comments> getCommentById(Long commentId) {
-        Map<Long, CacheEntry<Comments>> cache = cacheContainer.getCommentsCache();
-        if (cache.containsKey(commentId)) {
-            System.out.println("Комментарий найден в кэше: id = " + commentId);
-            return Optional.of(cache.get(commentId).getValue());
-        }
-
-        Optional<Comments> comment = commentsRepository.findById(commentId);
-        comment.ifPresent(c -> cache.put(c.getId(), new CacheEntry<>(c)));
-        return comment;
+        log.debug("Удален комментарий с ID: {}", commentId);
     }
 }

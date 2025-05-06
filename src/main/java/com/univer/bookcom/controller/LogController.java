@@ -1,7 +1,6 @@
 package com.univer.bookcom.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,85 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogController {
 
     private static final String LOG_FILE_PATH = "application.log";
-
-    @Operation(summary = "Получить структурированные логи", description =
-            "Возвращает все логи в структурированном формате", responses = {
-                @ApiResponse(responseCode = "200", description = "Логи успешно получены",
-                            content = @Content(array = @ArraySchema(
-                                    schema = @Schema(implementation = Map.class,
-                                    example =
-                            "{\"timestamp\":\"2023-01-01 12:00:00.000\",\"thread\":\"[main]\","
-                            + "\"level\":\"INFO\",\"message\":\"Приложение запущено\"}")))),
-                @ApiResponse(responseCode = "404", description = "Файл логов не найден",
-                            content = @Content(schema = @Schema(example =
-                            "{\"ошибка\":\"Файл логов не найден\","
-                            + "\"path\":\"/path/to/log/file.log\"}"))),
-                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema(example =
-                            "{\"ошибка\":\"Ошибка чтения файла логов\","
-                            + "\"details\":\"Сообщение IOException\"}")))
-            })
-    @GetMapping
-    public ResponseEntity<?> getStructuredLogs() {
-        try {
-            Path path = Paths.get(LOG_FILE_PATH);
-
-            if (!Files.exists(path)) {
-                return ResponseEntity.status(404).body(
-                        Map.of("ошибка", "Файл логов не найден",
-                                "path", path.toAbsolutePath().toString())
-                );
-            }
-
-            List<String> logLines = Files.readAllLines(path);
-            List<Map<String, String>> structuredLogs = new ArrayList<>();
-
-            for (String line : logLines) {
-                try {
-                    Map<String, String> logEntry = new HashMap<>();
-
-                    if (line.length() >= 23) {
-                        logEntry.put("timestamp", line.substring(0, 23));
-
-                        int threadEnd = line.indexOf("]", 24);
-                        if (threadEnd > 0) {
-                            logEntry.put("thread", line.substring(24, threadEnd + 1));
-
-                            String[] parts = line.substring(threadEnd + 1).trim().split("\\s+");
-                            if (parts.length >= 2) {
-                                logEntry.put("level", parts[0]);
-
-                                int messageStart = line.indexOf(" - ");
-                                if (messageStart > 0) {
-                                    logEntry.put("message", line.substring(messageStart + 3));
-                                } else {
-                                    logEntry.put("message", line.substring(threadEnd + 1).trim());
-                                }
-                            }
-                        }
-                    } else {
-                        logEntry.put("raw", line);
-                    }
-
-                    structuredLogs.add(logEntry);
-
-                } catch (Exception e) {
-                    Map<String, String> errorEntry = new HashMap<>();
-                    errorEntry.put("ошибка", "Ошибка парсинга строки лога");
-                    errorEntry.put("raw", line);
-                    structuredLogs.add(errorEntry);
-                }
-            }
-
-            return ResponseEntity.ok(structuredLogs);
-
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body(
-                    Map.of("ошибка", "Ошибка чтения файла логов",
-                            "details", e.getMessage())
-            );
-        }
-    }
 
     @Operation(summary = "Получить логи по дате",
             description = "Возвращает все логи за указанную дату в формате JSON",
