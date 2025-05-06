@@ -20,6 +20,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class CommentsService {
     private static final Logger log = LoggerFactory.getLogger(CommentsService.class);
+    private static final String NOT_FOUND_MESSAGE = " не найден";
+    private static final String BOOK_NOT_FOUND = "Книга с id ";
+    private static final String USER_NOT_FOUND = "Пользователь с id ";
+    private static final String COMMENT_NOT_FOUND = "Комментарий с id ";
 
     private final CommentsRepository commentsRepository;
     private final BookRepository bookRepository;
@@ -37,10 +41,10 @@ public class CommentsService {
     }
 
     public Comments createComment(Long bookId, Long userId, String text) {
-        Book book = bookRepository.findById(bookId).orElseThrow(() ->
-                new BookNotFoundException("Книга с id " + bookId + " не найдена"));
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new UserNotFoundException("Пользователь с id " + userId + " не найден"));
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND + bookId + NOT_FOUND_MESSAGE));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId + NOT_FOUND_MESSAGE));
 
         Comments comment = new Comments();
         comment.setText(text);
@@ -67,8 +71,8 @@ public class CommentsService {
     }
 
     public Comments updateComment(Long commentId, String newText) {
-        Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
-                new CommentNotFoundException("Комментарий с id " + commentId + " не найден"));
+        Comments comment = commentsRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
         comment.setText(newText);
         Comments updated = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));
@@ -77,8 +81,8 @@ public class CommentsService {
     }
 
     public void deleteComment(Long commentId) {
-        Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
-                new CommentNotFoundException("Комментарий с id " + commentId + " не найден"));
+        Comments comment = commentsRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
         commentsRepository.delete(comment);
         cacheContainer.getCommentsCache().remove(commentId);
         log.debug("Удален комментарий с ID: {}", commentId);
