@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -108,10 +107,13 @@ class BookServiceTest {
 
     @Test
     void testUpdateBook_notFound_throwsException() {
-        when(bookRepository.findById(anyLong())).thenReturn(Optional.empty());
+        Long bookId = 1L;
+        Book bookUpdateData = new Book();
+
+        when(bookRepository.findById(bookId)).thenReturn(Optional.empty());
 
         assertThrows(BookNotFoundException.class, () ->
-                bookService.updateBook(1L, new Book()));
+                bookService.updateBook(bookId, bookUpdateData));
     }
 
     @Test
@@ -148,10 +150,13 @@ class BookServiceTest {
 
     @Test
     void testCreateBookWithAuthor_authorNotFound_throwsException() {
-        when(userService.getUserById(123L)).thenReturn(Optional.empty());
+        long authorId = 123L;
+        Book newBook = new Book();
+
+        when(userService.getUserById(authorId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () ->
-                bookService.createBookWithAuthor(123L, new Book()));
+                bookService.createBookWithAuthor(authorId, newBook));
     }
 
     @Test
