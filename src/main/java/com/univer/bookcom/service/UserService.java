@@ -122,39 +122,42 @@ public class UserService {
         List<Book> added = new ArrayList<>();
 
         for (Book bookToAdd : books) {
-            boolean isDuplicate = false;
+            boolean skip = false;
 
             for (Book existingBook : user.getBooks()) {
                 if (bookToAdd.getTitle().equals(existingBook.getTitle())
                         && bookToAdd.getCountChapters() == existingBook.getCountChapters()
                         && bookToAdd.getPublicYear() == existingBook.getPublicYear()
                         && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
-                    isDuplicate = true;
+                    log.info("Пропущен дубликат книги (уже у пользователя): {}",
+                            bookToAdd.getTitle());
+                    skip = true;
                     break;
                 }
             }
 
-            if (isDuplicate) {
-                log.info("Пропущен дубликат книги (уже у пользователя): {}", bookToAdd.getTitle());
-                continue;
+            if (!skip) {
+                Optional<Book> bookInDbOpt =
+                        bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+                                bookToAdd.getTitle(),
+                                bookToAdd.getCountChapters(),
+                                bookToAdd.getPublicYear(),
+                                bookToAdd.getBookStatus());
+
+                if (bookInDbOpt.isPresent()) {
+                    Book bookInDb = bookInDbOpt.get();
+                    if (!bookInDb.getAuthors().contains(user)) {
+                        log.info("Пропущен дубликат книги (у других авторов): {}",
+                                bookToAdd.getTitle());
+                        skip = true;
+                    }
+                } else {
+                    bookToAdd = bookRepository.save(bookToAdd);
+                }
             }
 
-            Optional<Book> bookInDbOpt =
-                    bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
-                    bookToAdd.getTitle(),
-                    bookToAdd.getCountChapters(),
-                    bookToAdd.getPublicYear(),
-                    bookToAdd.getBookStatus());
-
-            if (bookInDbOpt.isPresent()) {
-                Book bookInDb = bookInDbOpt.get();
-                if (!bookInDb.getAuthors().contains(user)) {
-                    log.info("Пропущен дубликат книги (у других авторов): {}",
-                            bookToAdd.getTitle());
-                    continue;
-                }
-            } else {
-                bookToAdd = bookRepository.save(bookToAdd);
+            if (skip) {
+                continue;
             }
 
             bookToAdd.addAuthor(user);
