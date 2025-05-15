@@ -13,8 +13,8 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,7 +64,6 @@ public class LogController {
     @GetMapping("/by-date")
     public ResponseEntity<Map<String, Object>> getLogsByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-
         try {
             Path path = Paths.get(LOG_FILE_PATH);
             Map<String, Object> response = new HashMap<>();
@@ -73,13 +72,13 @@ public class LogController {
             if (!Files.exists(path)) {
                 response.put("ошибка", "Файл логов не найден");
                 response.put("путь", path.toAbsolutePath().toString());
-                return ResponseEntity.status(404).body(response);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
             String datePrefix = date.toString();
             List<String> filteredLogs = Files.lines(path)
                     .filter(line -> line.startsWith(datePrefix))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (filteredLogs.isEmpty()) {
                 response.put("сообщение", "Логи за указанную дату не найдены");
@@ -89,12 +88,11 @@ public class LogController {
             response.put("логи", filteredLogs);
             response.put("количество", filteredLogs.size());
             return ResponseEntity.ok(response);
-
         } catch (IOException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("ошибка", "Ошибка чтения логов");
             errorResponse.put("причина", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 }

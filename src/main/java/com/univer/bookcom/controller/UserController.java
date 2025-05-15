@@ -18,7 +18,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -392,7 +391,9 @@ public class UserController {
     public ResponseEntity<List<User>> createUsersBulk(@Valid @RequestBody List<User> users) {
         log.debug("Обработка bulk-запроса на создание {} пользователей", users.size());
 
-        List<String> emails = users.stream().map(User::getEmail).collect(Collectors.toList());
+        List<String> emails = users.stream()
+                .map(User::getEmail)
+                .toList();
 
         if (emails.size() != new HashSet<>(emails).size()) {
             log.error("Обнаружены дубликаты email в запросе");
@@ -401,7 +402,7 @@ public class UserController {
 
         List<String> existingEmails = emails.stream()
                 .filter(email -> userService.findUserByEmail(email).isPresent())
-                .collect(Collectors.toList());
+                .toList();
 
         if (!existingEmails.isEmpty()) {
             log.error("Email уже существуют: {}", existingEmails);
@@ -409,15 +410,8 @@ public class UserController {
         }
 
         List<User> createdUsers = users.stream()
-                .map(user -> {
-                    try {
-                        return userService.saveUser(user);
-                    } catch (Exception e) {
-                        log.error("Ошибка при создании пользователя: {}", e.getMessage());
-                        throw e;
-                    }
-                })
-                .collect(Collectors.toList());
+                .map(userService::saveUser)
+                .toList();
 
         log.info("Успешно создано {} пользователей", createdUsers.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);

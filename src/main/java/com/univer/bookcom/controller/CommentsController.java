@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -197,7 +196,7 @@ public class CommentsController {
 
         List<Comments> createdComments = texts.stream()
                 .map(text -> commentsService.createComment(bookId, userId, text))
-                .collect(Collectors.toList());
+                .toList();
 
         log.info("Успешно создано {} комментариев", createdComments.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdComments);
