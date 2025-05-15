@@ -8,9 +8,10 @@ import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.BookRepository;
 import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
-
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -126,23 +127,14 @@ public class UserService {
 
         for (Book bookToAdd : books) {
             log.debug("Обработка книги: {}", bookToAdd.getTitle());
-            boolean isDuplicate = false;
 
-            for (Book existingBook : user.getBooks()) {
-                if (bookToAdd.getTitle().equals(existingBook.getTitle())
-                        && bookToAdd.getCountChapters() == existingBook.getCountChapters()
-                        && bookToAdd.getPublicYear() == existingBook.getPublicYear()
-                        && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
-                    isDuplicate = true;
-                    log.info("Пропущен дубликат книги (у пользователя): {}", bookToAdd.getTitle());
-                    break;
-                }
-            }
-            if (isDuplicate) {
+            if (isDuplicateInUserBooks(user, bookToAdd)) {
+                log.info("Пропущен дубликат книги (у пользователя): {}", bookToAdd.getTitle());
                 continue;
             }
 
-            Optional<Book> bookInDbOpt = bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+            Optional<Book> bookInDbOpt =
+                    bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
                     bookToAdd.getTitle(),
                     bookToAdd.getCountChapters(),
                     bookToAdd.getPublicYear(),
@@ -150,11 +142,14 @@ public class UserService {
 
             if (bookInDbOpt.isPresent()) {
                 Book bookInDb = bookInDbOpt.get();
+
                 if (!bookInDb.getAuthors().contains(user)) {
-                    log.info("Пропущен дубликат книги (у других авторов): {}", bookToAdd.getTitle());
+                    log.info("Пропущен дубликат книги (у других авторов): {}",
+                            bookToAdd.getTitle());
                     continue;
                 } else {
-                    log.debug("Книга с таким названием уже есть у пользователя, добавляем автора: {}", bookToAdd.getTitle());
+                    log.debug("Книга с таким названием уже есть у пользователя,"
+                            + "добавляем автора: {}", bookToAdd.getTitle());
                     bookToAdd = bookInDb;
                 }
             } else {
@@ -162,15 +157,23 @@ public class UserService {
                 bookToAdd = bookRepository.save(bookToAdd);
             }
 
-            bookToAdd.addAuthor(user);
+            user.getBooks().add(bookToAdd);
             added.add(bookToAdd);
-            log.info("Книга успешно добавлена: {}", bookToAdd.getTitle());
         }
 
         userRepository.save(user);
-        cacheContainer.getUserCache().put(user.getId(), new CacheEntry<>(user));
-        log.debug("Завершено добавление книг пользователю с ID: {}", userId);
-
         return added;
+    }
+
+    private boolean isDuplicateInUserBooks(User user, Book bookToAdd) {
+        for (Book existingBook : user.getBooks()) {
+            if (bookToAdd.getTitle().equals(existingBook.getTitle())
+                    && bookToAdd.getCountChapters() == existingBook.getCountChapters()
+                    && bookToAdd.getPublicYear() == existingBook.getPublicYear()
+                    && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
