@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,9 +19,12 @@ import com.univer.bookcom.cache.CacheContainer;
 import com.univer.bookcom.cache.CacheEntry;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
+import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
+import com.univer.bookcom.repository.BookRepository;
 import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +40,7 @@ class UserServiceTest {
 
     private UserRepository userRepository;
     private CommentsRepository commentsRepository;
+    private BookRepository bookRepository;
     private CacheContainer cacheContainer;
     private UserService userService;
 
@@ -40,8 +48,10 @@ class UserServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         commentsRepository = mock(CommentsRepository.class);
+        bookRepository = mock(BookRepository.class);
         cacheContainer = mock(CacheContainer.class);
-        userService = new UserService(userRepository, commentsRepository, null, cacheContainer);
+        userService = new UserService(userRepository, commentsRepository,
+                bookRepository, cacheContainer);
     }
 
     @Test
@@ -164,5 +174,166 @@ class UserServiceTest {
 
         assertFalse(user.getBooks().contains(book));
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void testSaveUser_shouldSaveAndCache() {
+        User user = new User();
+        user.setId(1L);
+
+        when(userRepository.save(user)).thenReturn(user);
+        Map<Long, CacheEntry<User>> cache = new HashMap<>();
+        when(cacheContainer.getUserCache()).thenReturn(cache);
+
+        User result = userService.saveUser(user);
+
+        assertEquals(user, result);
+        assertTrue(cache.containsKey(1L));
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testFindUsersByName_shouldReturnList() {
+        List<User> users = List.of(new User(), new User());
+        when(userRepository.findByNameContaining("John")).thenReturn(users);
+
+        List<User> result = userService.findUsersByName("John");
+
+        assertEquals(2, result.size());
+        verify(userRepository).findByNameContaining("John");
+    }
+
+    @Test
+    void testFindUserByEmail_shouldReturnOptional() {
+        User user = new User();
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.findUserByEmail("test@example.com");
+
+        assertTrue(result.isPresent());
+        assertEquals(user, result.get());
+        verify(userRepository).findByEmail("test@example.com");
+    }
+
+    @Test
+    void testAddBooksToUserBulk_addsOnlyNewBooks() {
+        User user = new User();
+        user.setId(1L);
+        user.setBooks(new ArrayList<>());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(anyString(),
+                anyLong(), anyLong(), any()))
+                .thenReturn(Optional.empty());
+        when(bookRepository.save(any(Book.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.save(user)).thenReturn(user);
+
+        Map<Long, CacheEntry<User>> cache = new HashMap<>();
+        when(cacheContainer.getUserCache()).thenReturn(cache);
+
+        Book newBook = new Book();
+        newBook.setTitle("New Book");
+        newBook.setCountChapters(10);
+        newBook.setPublicYear(2020);
+        newBook.setBookStatus(BookStatus.ANNOUNCED); // Подставь свой статус из enum
+
+        List<Book> booksToAdd = List.of(newBook);
+
+        List<Book> added = userService.addBooksToUserBulk(1L, booksToAdd);
+
+        assertEquals(1, added.size());
+        assertTrue(user.getBooks().contains(newBook));
+        assertTrue(cache.containsKey(1L));
+        verify(bookRepository).save(newBook);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testAddBooksToUserBulk_skipsDuplicatesInUserBooks() {
+        User user = new User();
+        user.setId(1L);
+        user.setBooks(new ArrayList<>());
+
+        Book existingBook = new Book();
+        existingBook.setTitle("Duplicate");
+        existingBook.setCountChapters(5);
+        existingBook.setPublicYear(2010);
+        existingBook.setBookStatus(BookStatus.ANNOUNCED);
+        user.addBook(existingBook);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        Map<Long, CacheEntry<User>> cache = new HashMap<>();
+        when(cacheContainer.getUserCache()).thenReturn(cache);
+
+        Book duplicateBook = new Book();
+        duplicateBook.setTitle("Duplicate");
+        duplicateBook.setCountChapters(5);
+        duplicateBook.setPublicYear(2010);
+        duplicateBook.setBookStatus(BookStatus.ANNOUNCED);
+
+        List<Book> added = userService.addBooksToUserBulk(1L, List.of(duplicateBook));
+
+        assertTrue(added.isEmpty());
+        verify(userRepository).save(user);
+        assertTrue(cache.containsKey(1L));
+    }
+
+    @Test
+    void testAddBooksToUserBulk_skipsDuplicatesAtOtherAuthors() {
+        User user = new User();
+        user.setId(1L);
+        user.setBooks(new ArrayList<>());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        Book bookInDb = new Book();
+        bookInDb.setTitle("BookInDb");
+        bookInDb.setCountChapters(5);
+        bookInDb.setPublicYear(2010);
+        bookInDb.setBookStatus(BookStatus.ANNOUNCED);
+        bookInDb.addAuthor(new User()); // Другой автор
+
+        when(bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+                eq("BookInDb"), eq(5L), eq(2010L), eq(BookStatus.ANNOUNCED)))
+                .thenReturn(Optional.of(bookInDb));
+
+        Map<Long, CacheEntry<User>> cache = new HashMap<>();
+        when(cacheContainer.getUserCache()).thenReturn(cache);
+
+        Book bookToAdd = new Book();
+        bookToAdd.setTitle("BookInDb");
+        bookToAdd.setCountChapters(5);
+        bookToAdd.setPublicYear(2010);
+        bookToAdd.setBookStatus(BookStatus.ANNOUNCED);
+
+        List<Book> added = userService.addBooksToUserBulk(1L, List.of(bookToAdd));
+
+        assertTrue(added.isEmpty());
+        verify(userRepository).save(user);
+        assertTrue(cache.containsKey(1L));
+    }
+
+    @Test
+    void testAddBookToUser_userNotFound_throwsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        Book book = new Book();
+        assertThrows(UserNotFoundException.class, () -> userService.addBookToUser(1L, book));
+    }
+
+    @Test
+    void testRemoveBookFromUser_userNotFound_throwsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        Book book = new Book();
+        assertThrows(UserNotFoundException.class, () -> userService.removeBookFromUser(1L, book));
+    }
+
+    @Test
+    void testAddBooksToUserBulk_userNotFound_throwsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class, () ->
+                userService.addBooksToUserBulk(1L, List.of(new Book())));
     }
 }

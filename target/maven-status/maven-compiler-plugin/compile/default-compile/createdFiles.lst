@@ -9,14 +9,15 @@ com\univer\bookcom\exception\BookNotFoundException.class
 com\univer\bookcom\service\BookService.class
 com\univer\bookcom\service\UserService.class
 com\univer\bookcom\controller\CommentsController.class
+com\univer\bookcom\exception\GlobalExceptionHandler.class
 com\univer\bookcom\cache\CacheContainer$1.class
 com\univer\bookcom\service\CommentsService.class
 com\univer\bookcom\model\Comments.class
 com\univer\bookcom\BookcomApplication.class
 com\univer\bookcom\exception\InvalidStatusException.class
+com\univer\bookcom\exception\ServiceExecutionException.class
 com\univer\bookcom\model\BookStatus.class
 com\univer\bookcom\model\Book.class
-com\univer\bookcom\exception\InvalidDataException.class
 com\univer\bookcom\cache\CacheContainer$3.class
 com\univer\bookcom\exception\CommentNotFoundException.class
 com\univer\bookcom\controller\UserController.class

@@ -9,9 +9,10 @@ D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\controller\LogCo
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\controller\UserController.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\BookNotFoundException.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\CommentNotFoundException.java
-D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\InvalidDataException.java
+D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\GlobalExceptionHandler.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\InvalidStatusException.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\InvalidYearException.java
+D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\ServiceExecutionException.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\exception\UserNotFoundException.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\model\Book.java
 D:\javaProject\bookcom\bookcom\src\main\java\com\univer\bookcom\model\BookStatus.java

@@ -11,11 +11,14 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.univer.bookcom.cache.CacheContainer;
 import com.univer.bookcom.cache.CacheEntry;
 import com.univer.bookcom.exception.BookNotFoundException;
+import com.univer.bookcom.exception.CommentNotFoundException;
+import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.Comments;
 import com.univer.bookcom.model.User;
@@ -180,6 +183,63 @@ class CommentsServiceTest {
 
         verify(commentsRepository).findById(1L);
         verify(commentsRepository).delete(testComment);
+        assertFalse(commentsCache.containsKey(1L));
+    }
+
+    @Test
+    void createComment_ShouldThrowUserNotFoundException() {
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(testBook));
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(UserNotFoundException.class,
+                () -> commentsService.createComment(1L, 1L, "Test comment"));
+
+        assertNotNull(exception);
+        verify(bookRepository).findById(1L);
+        verify(userRepository).findById(1L);
+        verifyNoInteractions(commentsRepository);
+        assertFalse(commentsCache.containsKey(1L));
+    }
+
+    @Test
+    void getCommentsByUserId_ShouldReturnCommentsList() {
+        when(commentsRepository.findByUserId(1L)).thenReturn(List.of(testComment));
+
+        List<Comments> result = commentsService.getCommentsByUserId(1L);
+
+        assertAll(
+                () -> assertFalse(result.isEmpty()),
+                () -> assertEquals(1, result.size()),
+                () -> assertEquals(testComment, result.get(0))
+        );
+
+        verify(commentsRepository).findByUserId(1L);
+        verifyNoInteractions(cacheContainer);
+    }
+
+    @Test
+    void updateComment_ShouldThrowCommentNotFoundException() {
+        when(commentsRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(CommentNotFoundException.class,
+                () -> commentsService.updateComment(1L, "New text"));
+
+        assertNotNull(exception);
+        verify(commentsRepository).findById(1L);
+        verifyNoMoreInteractions(commentsRepository);
+        assertFalse(commentsCache.containsKey(1L));
+    }
+
+    @Test
+    void deleteComment_ShouldThrowCommentNotFoundException() {
+        when(commentsRepository.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(CommentNotFoundException.class,
+                () -> commentsService.deleteComment(1L));
+
+        assertNotNull(exception);
+        verify(commentsRepository).findById(1L);
+        verifyNoMoreInteractions(commentsRepository);
         assertFalse(commentsCache.containsKey(1L));
     }
 }

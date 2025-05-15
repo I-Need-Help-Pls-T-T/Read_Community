@@ -91,4 +91,8 @@ public class User {
     public List<Comments> getComments() {
         return comments;
     }
+
+    public void setBooks(List<Book> books) {
+        this.books = books;
+    }
 }

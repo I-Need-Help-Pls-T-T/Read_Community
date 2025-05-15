@@ -1,4 +1,18 @@
 -------------------------------------------------------------------------------
 Test set: com.univer.bookcom.service.UserServiceTest
 -------------------------------------------------------------------------------
-Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.univer.bookcom.service.UserServiceTest
+Tests run: 19, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.090 s <<< FAILURE! -- in com.univer.bookcom.service.UserServiceTest
+com.univer.bookcom.service.UserServiceTest.testAddBooksToUserBulk_emptyList_returnsEmptyList -- Time elapsed: 0.012 s <<< FAILURE!
+org.mockito.exceptions.verification.NeverWantedButInvoked: 
+
+userRepository.save(<any>);
+Never wanted here:
+-> at com.univer.bookcom.service.UserServiceTest.testAddBooksToUserBulk_emptyList_returnsEmptyList(UserServiceTest.java:344)
+But invoked here:
+-> at com.univer.bookcom.service.UserService.addBooksToUserBulk(UserService.java:167) with arguments: [com.univer.bookcom.model.User@2a7d12c8]
+
+	at com.univer.bookcom.service.UserServiceTest.testAddBooksToUserBulk_emptyList_returnsEmptyList(UserServiceTest.java:344)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
