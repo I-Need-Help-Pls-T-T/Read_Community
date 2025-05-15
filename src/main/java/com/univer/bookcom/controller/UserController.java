@@ -43,6 +43,8 @@ public class UserController {
     private final BookService bookService;
     private final UserRepository userRepository;
 
+    private static final String USER_NOT_FOUND_MSG = "Пользователь не найден";
+
     public UserController(UserService userService, BookService bookService,
                           UserRepository userRepository) {
         this.userService = userService;
@@ -76,7 +78,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректный ID",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный ID\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -90,8 +92,8 @@ public class UserController {
 
         User user = userService.getUserById(id)
                 .orElseThrow(() -> {
-                    log.error("Пользователь не найден");
-                    return new UserNotFoundException("Пользователь не найден");
+                    log.error(USER_NOT_FOUND_MSG);
+                    return new UserNotFoundException(USER_NOT_FOUND_MSG);
                 });
 
         log.info("Пользователь успешно найден");
@@ -128,7 +130,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -154,7 +156,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректный ID",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный ID\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -168,8 +170,8 @@ public class UserController {
 
         User author = userService.getUserById(id)
                 .orElseThrow(() -> {
-                    log.error("Пользователь не найден");
-                    return new UserNotFoundException("Пользователь не найден");
+                    log.error(USER_NOT_FOUND_MSG);
+                    return new UserNotFoundException(USER_NOT_FOUND_MSG);
                 });
 
         List<Book> books = bookService.findBooksByAuthor(author);
@@ -229,7 +231,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректный email",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный формат email\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -243,8 +245,8 @@ public class UserController {
 
         User user = userService.findUserByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь не найден");
-                    return new UserNotFoundException("Пользователь не найден");
+                    log.warn(USER_NOT_FOUND_MSG);
+                    return new UserNotFoundException(USER_NOT_FOUND_MSG);
                 });
 
         log.info("Пользователь успешно найден");
@@ -258,7 +260,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные книги\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -424,7 +426,7 @@ public class UserController {
                 @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные\"}"))),
-                @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -436,12 +438,6 @@ public class UserController {
             @PathVariable @Positive(message = "ID пользователя должен быть положительным числом")
             Long userId, @Valid @RequestBody List<Book> books) {
         log.debug("Обработка bulk-запроса на добавление {} книг пользователю", books.size());
-
-        User user = userService.getUserById(userId)
-                .orElseThrow(() -> {
-                    log.error("Пользователь не найден");
-                    return new UserNotFoundException("Пользователь не найден");
-                });
 
         books.forEach(book -> userService.addBookToUser(userId, book));
 
