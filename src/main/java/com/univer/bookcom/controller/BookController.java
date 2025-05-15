@@ -1,6 +1,12 @@
 package com.univer.bookcom.controller;
 
-import com.univer.bookcom.exception.*;
+import com.univer.bookcom.exception.BookCreationException;
+import com.univer.bookcom.exception.BookNotFoundException;
+import com.univer.bookcom.exception.InternalServerErrorException;
+import com.univer.bookcom.exception.InvalidDataException;
+import com.univer.bookcom.exception.InvalidStatusException;
+import com.univer.bookcom.exception.InvalidYearException;
+import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
@@ -18,7 +24,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -370,12 +375,11 @@ public class BookController {
                             return bookService.saveBook(book);
                         } catch (Exception e) {
                             throw new BookCreationException(
-                                    String.format("Не удалось создать книгу '%s': %s",
-                                            book.getTitle(), e.getMessage()),
+                                    String.format("Не удалось создать книгу '%s'", book.getTitle()),
                                     e);
                         }
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("Успешно создано {} книг", createdBooks.size());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdBooks);
