@@ -1,10 +1,6 @@
 package com.univer.bookcom.controller;
 
-import com.univer.bookcom.exception.BookNotFoundException;
-import com.univer.bookcom.exception.InvalidDataException;
-import com.univer.bookcom.exception.InvalidStatusException;
-import com.univer.bookcom.exception.InvalidYearException;
-import com.univer.bookcom.exception.UserNotFoundException;
+import com.univer.bookcom.exception.*;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
@@ -362,23 +358,34 @@ public class BookController {
     public ResponseEntity<List<Book>> createBooksBulk(@Valid @RequestBody List<Book> books) {
         log.debug("Обработка bulk-запроса на создание {} книг", books.size());
 
-        if (books == null || books.isEmpty()) {
+        if (books.isEmpty()) {
             log.error("Некорректные данные: список книг пустой");
             throw new InvalidDataException("Некорректные данные");
         }
 
-        List<Book> createdBooks = books.stream()
-                .map(book -> {
-                    try {
-                        return bookService.saveBook(book);
-                    } catch (Exception e) {
-                        log.error("Ошибка при создании книги: {}", e.getMessage());
-                        throw e;
-                    }
-                })
-                .collect(Collectors.toList());
+        try {
+            List<Book> createdBooks = books.stream()
+                    .map(book -> {
+                        try {
+                            return bookService.saveBook(book);
+                        } catch (Exception e) {
+                            log.error("Ошибка при создании книги с названием '{}': {}",
+                                    book.getTitle(), e.getMessage(), e);
+                            throw new BookCreationException("Не удалось создать книгу '"
+                                    + book.getTitle() + "': " + e.getMessage(), e);
+                        }
+                    })
+                    .collect(Collectors.toList());
 
-        log.info("Успешно создано {} книг", createdBooks.size());
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdBooks);
+            log.info("Успешно создано {} книг", createdBooks.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdBooks);
+        } catch (BookCreationException e) {
+            log.error("Ошибка при массовом создании книг: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Неожиданная ошибка при массовом создании книг: {}", e.getMessage(), e);
+            throw new InternalServerErrorException(
+                    "Внутренняя ошибка сервера при создании книг: " + e.getMessage(), e);
+        }
     }
 }
