@@ -118,55 +118,63 @@ public class UserService {
     public List<Book> addBooksToUserBulk(Long userId, List<Book> books) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
-
         List<Book> added = new ArrayList<>();
 
         for (Book bookToAdd : books) {
-            boolean skip = false;
-
-            for (Book existingBook : user.getBooks()) {
-                if (bookToAdd.getTitle().equals(existingBook.getTitle())
-                        && bookToAdd.getCountChapters() == existingBook.getCountChapters()
-                        && bookToAdd.getPublicYear() == existingBook.getPublicYear()
-                        && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
-                    log.info("Пропущен дубликат книги (уже у пользователя): {}",
-                            bookToAdd.getTitle());
-                    skip = true;
-                    break;
-                }
-            }
-
-            if (!skip) {
-                Optional<Book> bookInDbOpt =
-                        bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
-                                bookToAdd.getTitle(),
-                                bookToAdd.getCountChapters(),
-                                bookToAdd.getPublicYear(),
-                                bookToAdd.getBookStatus());
-
-                if (bookInDbOpt.isPresent()) {
-                    Book bookInDb = bookInDbOpt.get();
-                    if (!bookInDb.getAuthors().contains(user)) {
-                        log.info("Пропущен дубликат книги (у других авторов): {}",
-                                bookToAdd.getTitle());
-                        skip = true;
-                    }
-                } else {
-                    bookToAdd = bookRepository.save(bookToAdd);
-                }
-            }
-
-            if (skip) {
+            if (shouldSkipBook(user, bookToAdd)) {
                 continue;
             }
 
-            bookToAdd.addAuthor(user);
-            added.add(bookToAdd);
+            Book bookToSaveOrGet = findOrSaveBook(bookToAdd);
+
+            bookToSaveOrGet.addAuthor(user);
+            added.add(bookToSaveOrGet);
         }
 
         userRepository.save(user);
         cacheContainer.getUserCache().put(user.getId(), new CacheEntry<>(user));
 
         return added;
+    }
+
+    private boolean shouldSkipBook(User user, Book bookToAdd) {
+        if (isDuplicateInUserBooks(user, bookToAdd)) {
+            log.info("Пропущен дубликат книги (уже у пользователя): {}", bookToAdd.getTitle());
+            return true;
+        }
+        Optional<Book> bookInDbOpt =
+                bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+                bookToAdd.getTitle(),
+                bookToAdd.getCountChapters(),
+                bookToAdd.getPublicYear(),
+                bookToAdd.getBookStatus());
+
+        if (bookInDbOpt.isPresent()) {
+            Book bookInDb = bookInDbOpt.get();
+            if (!bookInDb.getAuthors().contains(user)) {
+                log.info("Пропущен дубликат книги (у других авторов): {}", bookToAdd.getTitle());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isDuplicateInUserBooks(User user, Book bookToAdd) {
+        return user.getBooks().stream().anyMatch(existingBook ->
+                existingBook.getTitle().equals(bookToAdd.getTitle())
+                        && existingBook.getCountChapters() == bookToAdd.getCountChapters()
+                        && existingBook.getPublicYear() == bookToAdd.getPublicYear()
+                        && existingBook.getBookStatus() == bookToAdd.getBookStatus());
+    }
+
+    private Book findOrSaveBook(Book bookToAdd) {
+        return bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+                bookToAdd.getTitle(),
+                bookToAdd.getCountChapters(),
+                bookToAdd.getPublicYear(),
+                bookToAdd.getBookStatus()).orElseGet(() -> {
+                    log.debug("Сохраняем новую книгу в базу: {}", bookToAdd.getTitle());
+                    return bookRepository.save(bookToAdd);
+                });
     }
 }
