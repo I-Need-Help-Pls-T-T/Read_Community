@@ -369,10 +369,10 @@ public class BookController {
                         try {
                             return bookService.saveBook(book);
                         } catch (Exception e) {
-                            log.error("Ошибка при создании книги с названием '{}': {}",
-                                    book.getTitle(), e.getMessage(), e);
-                            throw new BookCreationException("Не удалось создать книгу '"
-                                    + book.getTitle() + "': " + e.getMessage(), e);
+                            throw new BookCreationException(
+                                    String.format("Не удалось создать книгу '%s': %s",
+                                            book.getTitle(), e.getMessage()),
+                                    e);
                         }
                     })
                     .collect(Collectors.toList());
@@ -380,12 +380,8 @@ public class BookController {
             log.info("Успешно создано {} книг", createdBooks.size());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdBooks);
         } catch (BookCreationException e) {
-            log.error("Ошибка при массовом создании книг: {}", e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Неожиданная ошибка при массовом создании книг: {}", e.getMessage(), e);
             throw new InternalServerErrorException(
-                    "Внутренняя ошибка сервера при создании книг: " + e.getMessage(), e);
+                    "Ошибка при массовом создании книг: " + e.getMessage(), e);
         }
     }
 }
