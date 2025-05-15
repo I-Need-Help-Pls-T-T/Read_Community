@@ -47,6 +47,9 @@ public class BookController {
     private final BookService bookService;
     private final UserService userService;
 
+    private static final String BOOK_NOT_FOUND_BY_ID_MSG = "Книга с ID {} не найдена";
+    private static final String BOOK_NOT_FOUND_MSG = "Книга не найдена";
+
     public BookController(BookService bookService, UserService userService) {
         this.bookService = bookService;
         this.userService = userService;
@@ -70,7 +73,7 @@ public class BookController {
             responses = {
                 @ApiResponse(responseCode = "200", description = "Книга найдена",
                             content = @Content(schema = @Schema(implementation = Book.class))),
-                @ApiResponse(responseCode = "404", description = "Книга не найдена",
+                @ApiResponse(responseCode = "404", description = BOOK_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Книга не найдена\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -83,8 +86,8 @@ public class BookController {
         return bookService.getBookById(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> {
-                    log.warn("Книга с ID {} не найдена", id);
-                    return new BookNotFoundException("Книга не найдена");
+                    log.warn(BOOK_NOT_FOUND_BY_ID_MSG, id);
+                    return new BookNotFoundException(BOOK_NOT_FOUND_MSG);
                 });
     }
 
@@ -115,7 +118,7 @@ public class BookController {
             responses = {
                 @ApiResponse(responseCode = "200", description = "Книга успешно обновлена",
                             content = @Content(schema = @Schema(implementation = Book.class))),
-                @ApiResponse(responseCode = "404", description = "Книга не найдена",
+                @ApiResponse(responseCode = "404", description = BOOK_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Книга не найдена\"}"))),
                 @ApiResponse(responseCode = "400", description = "Некорректные данные",
@@ -137,7 +140,7 @@ public class BookController {
     @Operation(summary = "Удалить книгу",
             responses = {
                 @ApiResponse(responseCode = "204", description = "Книга успешно удалена"),
-                @ApiResponse(responseCode = "404", description = "Книга не найдена",
+                @ApiResponse(responseCode = "404", description = BOOK_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Книга не найдена\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
@@ -148,7 +151,7 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable @Positive Long id) {
         log.debug("Удаление книги с ID {}", id);
         if (!bookService.isCachedOrExists(id)) {
-            throw new BookNotFoundException("Книга не найдена");
+            throw new BookNotFoundException(BOOK_NOT_FOUND_MSG);
         }
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
@@ -168,7 +171,7 @@ public class BookController {
     @GetMapping("/search/title")
     public ResponseEntity<List<Book>> searchBooksByTitle(
             @RequestParam @NotBlank String title) {
-        log.debug("Поиск книг по названию: {}", title);
+        log.debug("Выполняется поиск книг по названию.");
         List<Book> books = bookService.findBooksByTitle(title);
         if (books.isEmpty()) {
             throw new BookNotFoundException("Книги не найдены");
@@ -190,7 +193,7 @@ public class BookController {
     @GetMapping("/search/author")
     public ResponseEntity<List<Book>> searchBooksByAuthor(
             @RequestParam @NotBlank String author) {
-        log.debug("Поиск книг по автору: {}", author);
+        log.debug("Выполняется поиск книг по автору");
         List<Book> books = bookService.findBooksByAuthor(author);
         if (books.isEmpty()) {
             throw new BookNotFoundException("Книги не найдены");
@@ -287,8 +290,8 @@ public class BookController {
         log.debug("Обработка добавления автора к книге");
 
         Book book = bookService.getBookById(bookId).orElseThrow(() -> {
-            log.error("Книга с ID {} не найдена", bookId);
-            return new BookNotFoundException("Книга не найдена");
+            log.error(BOOK_NOT_FOUND_BY_ID_MSG, bookId);
+            return new BookNotFoundException(BOOK_NOT_FOUND_MSG);
         });
 
         User author = userService.getUserById(authorId).orElseThrow(() -> {
@@ -322,8 +325,8 @@ public class BookController {
         log.debug("Обработка удаления автора из книги");
 
         Book book = bookService.getBookById(bookId).orElseThrow(() -> {
-            log.error("Книга с ID {} не найдена", bookId);
-            return new BookNotFoundException("Книга не найдена");
+            log.error(BOOK_NOT_FOUND_BY_ID_MSG, bookId);
+            return new BookNotFoundException(BOOK_NOT_FOUND_MSG);
         });
 
         User author = userService.getUserById(authorId).orElseThrow(() -> {
