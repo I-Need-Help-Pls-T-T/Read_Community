@@ -42,7 +42,7 @@ public class LoggingAspect {
             }
 
             return result;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             String message = String.format("Ошибка в %s.%s() с исключением: %s",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
@@ -72,7 +72,7 @@ public class LoggingAspect {
             }
 
             return result;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             String message = String.format("Ошибка в %s.%s() с исключением: %s",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
