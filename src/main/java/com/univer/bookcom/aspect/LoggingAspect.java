@@ -1,5 +1,6 @@
 package com.univer.bookcom.aspect;
 
+import java.util.Arrays;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
@@ -26,7 +27,7 @@ public class LoggingAspect {
             log.info("==> {}.{}() с аргументами: {}",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
-                    joinPoint.getArgs());
+                    Arrays.toString(joinPoint.getArgs()));
         }
 
         try {
@@ -41,12 +42,12 @@ public class LoggingAspect {
 
             return result;
         } catch (Exception e) {
-            log.error("<== {}.{}() с исключением: {}",
+            String message = String.format("Ошибка в %s.%s() с исключением: %s",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
-                    e.getClass().getSimpleName(),
-                    e);
-            throw e;
+                    e.getClass().getSimpleName());
+            log.error(message, e);
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -56,7 +57,7 @@ public class LoggingAspect {
             log.debug("==> {}.{}() с аргументами: {}",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
-                    joinPoint.getArgs());
+                    Arrays.toString(joinPoint.getArgs()));
         }
 
         try {
@@ -71,12 +72,12 @@ public class LoggingAspect {
 
             return result;
         } catch (Exception e) {
-            log.error("<== {}.{}() с исключением: {}",
+            String message = String.format("Ошибка в %s.%s() с исключением: %s",
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
-                    e.getClass().getSimpleName(),
-                    e);
-            throw e;
+                    e.getClass().getSimpleName());
+            log.error(message, e);
+            throw new RuntimeException(message, e);
         }
     }
 
