@@ -116,20 +116,26 @@ public class UserService {
     }
 
     public List<Book> addBooksToUserBulk(Long userId, List<Book> books) {
-        log.debug("Начало добавления книг пользователю с ID: {}", userId);
-
-        User user = userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь с ID {} не найден", userId);
-            return new UserNotFoundException(String.format(USER_NOT_FOUND, userId));
-        });
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
 
         List<Book> added = new ArrayList<>();
 
         for (Book bookToAdd : books) {
-            log.debug("Обработка книги: {}", bookToAdd.getTitle());
+            boolean isDuplicate = false;
 
-            if (isDuplicateInUserBooks(user, bookToAdd)) {
-                log.info("Пропущен дубликат книги (у пользователя): {}", bookToAdd.getTitle());
+            for (Book existingBook : user.getBooks()) {
+                if (bookToAdd.getTitle().equals(existingBook.getTitle())
+                        && bookToAdd.getCountChapters() == existingBook.getCountChapters()
+                        && bookToAdd.getPublicYear() == existingBook.getPublicYear()
+                        && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (isDuplicate) {
+                log.info("Пропущен дубликат книги (уже у пользователя): {}", bookToAdd.getTitle());
                 continue;
             }
 
@@ -142,38 +148,22 @@ public class UserService {
 
             if (bookInDbOpt.isPresent()) {
                 Book bookInDb = bookInDbOpt.get();
-
                 if (!bookInDb.getAuthors().contains(user)) {
                     log.info("Пропущен дубликат книги (у других авторов): {}",
                             bookToAdd.getTitle());
                     continue;
-                } else {
-                    log.debug("Книга с таким названием уже есть у пользователя,"
-                            + "добавляем автора: {}", bookToAdd.getTitle());
-                    bookToAdd = bookInDb;
                 }
             } else {
-                log.debug("Сохраняем новую книгу в базу: {}", bookToAdd.getTitle());
                 bookToAdd = bookRepository.save(bookToAdd);
             }
 
-            user.getBooks().add(bookToAdd);
+            bookToAdd.addAuthor(user);
             added.add(bookToAdd);
         }
 
         userRepository.save(user);
-        return added;
-    }
+        cacheContainer.getUserCache().put(user.getId(), new CacheEntry<>(user));
 
-    private boolean isDuplicateInUserBooks(User user, Book bookToAdd) {
-        for (Book existingBook : user.getBooks()) {
-            if (bookToAdd.getTitle().equals(existingBook.getTitle())
-                    && bookToAdd.getCountChapters() == existingBook.getCountChapters()
-                    && bookToAdd.getPublicYear() == existingBook.getPublicYear()
-                    && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
-                return true;
-            }
-        }
-        return false;
+        return added;
     }
 }
