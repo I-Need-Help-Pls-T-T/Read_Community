@@ -1,5 +1,6 @@
 package com.univer.bookcom.aspect;
 
+import com.univer.bookcom.exception.ServiceExecutionException;
 import java.util.Arrays;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;
@@ -47,7 +48,7 @@ public class LoggingAspect {
                     joinPoint.getSignature().getName(),
                     e.getClass().getSimpleName());
             log.error(message, e);
-            throw e;
+            throw new ServiceExecutionException(message, e);
         }
     }
 
@@ -77,7 +78,7 @@ public class LoggingAspect {
                     joinPoint.getSignature().getName(),
                     e.getClass().getSimpleName());
             log.error(message, e);
-            throw e;
+            throw new ServiceExecutionException(message, e);
         }
     }
 
