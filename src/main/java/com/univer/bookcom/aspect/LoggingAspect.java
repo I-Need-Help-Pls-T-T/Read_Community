@@ -47,7 +47,6 @@ public class LoggingAspect {
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
                     e.getClass().getSimpleName());
-            log.error(message, e);
             throw new ServiceExecutionException(message, e);
         }
     }
@@ -77,7 +76,6 @@ public class LoggingAspect {
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
                     e.getClass().getSimpleName());
-            log.error(message, e);
             throw new ServiceExecutionException(message, e);
         }
     }
