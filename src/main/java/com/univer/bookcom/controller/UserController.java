@@ -137,9 +137,9 @@ public class UserController {
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable @Positive
-                    (message = "ID пользователя должен быть положительным числом") Long id,
-            @Valid @RequestBody User updatedUser) {
+    public ResponseEntity<User> updateUser(
+            @PathVariable @Positive(message = "ID пользователя должен быть положительным числом")
+            Long id, @Valid @RequestBody User updatedUser) {
         log.debug("Обновление пользователя");
 
         User user = userService.updateUser(id, updatedUser);
@@ -267,9 +267,9 @@ public class UserController {
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
     @PostMapping("/{userId}/books")
-    public ResponseEntity<Void> addBookToUser(@PathVariable @Positive
-            (message = "ID пользователя должен быть положительным числом") Long userId,
-            @Valid @RequestBody Book book) {
+    public ResponseEntity<Void> addBookToUser(
+            @PathVariable @Positive (message = "ID пользователя должен быть положительным числом")
+            Long userId, @Valid @RequestBody Book book) {
         log.debug("Добавление книги пользователю");
 
         userService.addBookToUser(userId, book);
@@ -287,7 +287,7 @@ public class UserController {
                                     example = "{\"ошибка\":\"Некорректные ID\"}"))),
                 @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
-                            "{\"ошибка\":\"Пользователь или книга не найдены\"}"))),
+                                    "{\"ошибка\":\"Пользователь или книга не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
@@ -319,7 +319,7 @@ public class UserController {
                                     example = "{\"ошибка\":\"Название не может быть пустым\"}"))),
                 @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
-                            "{\"ошибка\":\"Книга или пользователи не найдены\"}"))),
+                                    "{\"ошибка\":\"Книга или пользователи не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
@@ -392,8 +392,7 @@ public class UserController {
     public ResponseEntity<List<User>> createUsersBulk(@Valid @RequestBody List<User> users) {
         log.debug("Обработка bulk-запроса на создание {} пользователей", users.size());
 
-        List<String> emails = users.stream().map(User::getEmail)
-                .collect(Collectors.toList());
+        List<String> emails = users.stream().map(User::getEmail).collect(Collectors.toList());
 
         if (emails.size() != new HashSet<>(emails).size()) {
             log.error("Обнаружены дубликаты email в запросе");

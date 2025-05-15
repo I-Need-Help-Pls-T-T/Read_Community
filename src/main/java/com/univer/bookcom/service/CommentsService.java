@@ -41,10 +41,10 @@ public class CommentsService {
     }
 
     public Comments createComment(Long bookId, Long userId, String text) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND + bookId + NOT_FOUND_MESSAGE));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND + userId + NOT_FOUND_MESSAGE));
+        Book book = bookRepository.findById(bookId).orElseThrow(() ->
+                new BookNotFoundException(BOOK_NOT_FOUND + bookId + NOT_FOUND_MESSAGE));
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException(USER_NOT_FOUND + userId + NOT_FOUND_MESSAGE));
 
         Comments comment = new Comments();
         comment.setText(text);
@@ -71,8 +71,8 @@ public class CommentsService {
     }
 
     public Comments updateComment(Long commentId, String newText) {
-        Comments comment = commentsRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
+        Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
+                new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
         comment.setText(newText);
         Comments updated = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));
@@ -81,8 +81,8 @@ public class CommentsService {
     }
 
     public void deleteComment(Long commentId) {
-        Comments comment = commentsRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
+        Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
+                new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
         commentsRepository.delete(comment);
         cacheContainer.getCommentsCache().remove(commentId);
         log.debug("Удален комментарий с ID: {}", commentId);

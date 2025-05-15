@@ -99,16 +99,16 @@ public class UserService {
     }
 
     public void addBookToUser(Long userId, Book book) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
         user.addBook(book);
         User updated = userRepository.save(user);
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
     }
 
     public void removeBookFromUser(Long userId, Book book) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
         user.removeBook(book);
         User updated = userRepository.save(user);
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
