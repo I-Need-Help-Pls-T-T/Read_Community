@@ -100,12 +100,40 @@ public class Book {
     }
 
     public void addAuthor(User author) {
-        authors.add(author);
-        author.getBooks().add(this);
+        if (this.authors == null) {
+            this.authors = new ArrayList<>();
+        }
+        if (!this.authors.contains(author)) {
+            this.authors.add(author);
+            if (author.getBooks() == null) {
+                author.setBooks(new ArrayList<>());
+            }
+            if (!author.getBooks().contains(this)) {
+                author.getBooks().add(this);
+            }
+        }
     }
 
     public void removeAuthor(User author) {
         authors.remove(author);
         author.getBooks().remove(this);
+    }
+
+    public void setAuthors(List<User> authors) {
+        if (this.authors != null) {
+            for (User author : this.authors) {
+                author.getBooks().remove(this);
+            }
+        }
+
+        this.authors = authors != null ? new ArrayList<>(authors) : new ArrayList<>();
+
+        if (authors != null) {
+            for (User author : authors) {
+                if (!author.getBooks().contains(this)) {
+                    author.getBooks().add(this);
+                }
+            }
+        }
     }
 }

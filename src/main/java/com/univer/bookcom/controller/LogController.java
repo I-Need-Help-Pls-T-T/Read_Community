@@ -10,9 +10,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,39 +30,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogController {
 
     private static final String LOG_FILE_PATH = "application.log";
+    private static final Pattern LOG_PATTERN = Pattern.compile(
+            "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} \\[(.*?)\\]"
+                    + " (INFO|DEBUG|WARN|ERROR) (.*?)(?: - (.*))?$"
+    );
 
     @Operation(summary = "Получить логи по дате",
-            description = "Возвращает все логи за указанную дату в формате JSON",
+            description = "Возвращает основные логи за указанную дату в компактном формате",
             responses = {
                 @ApiResponse(responseCode = "200", description = "Логи успешно получены",
-                            content = @Content(schema = @Schema(implementation = Map.class,
-                                    example = """
-                      {
-                        "дата": "2023-01-01",
-                        "логи": [
-                          "2023-01-01 12:00:00.000 [main] INFO Приложение запущено",
-                          "2023-01-01 12:01:00.000 [main] DEBUG Загрузка конфигурации"
-                        ],
-                        "количество": 2
-                      }"""))),
-                @ApiResponse(responseCode = "400", description = "Некорректный формат даты",
-                            content = @Content(schema = @Schema(example = """
-                      {
-                        "ошибка": "Некорректный формат даты",
-                        "ожидаемый_формат": "yyyy-MM-dd"
-                      }"""))),
-                @ApiResponse(responseCode = "404", description = "Файл логов не найден",
-                            content = @Content(schema = @Schema(example = """
-                      {
-                        "ошибка": "Файл логов не найден",
-                        "путь": "/var/log/application.log"
-                      }"""))),
-                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
-                            content = @Content(schema = @Schema(example = """
-                      {
-                        "ошибка": "Ошибка чтения логов",
-                        "причина": "Файл недоступен"
-                      }""")))
+                            content = @Content(schema = @Schema(implementation = Map.class))),
+                @ApiResponse(responseCode = "400", description = "Некорректный формат даты"),
+                @ApiResponse(responseCode = "404", description = "Файл логов не найден"),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
             })
     @GetMapping("/by-date")
     public ResponseEntity<Map<String, Object>> getLogsByDate(
@@ -76,9 +59,16 @@ public class LogController {
             }
 
             String datePrefix = date.toString();
-            List<String> filteredLogs = Files.lines(path)
+            List<String> filteredLogs = new ArrayList<>();
+
+            Files.lines(path)
                     .filter(line -> line.startsWith(datePrefix))
-                    .toList();
+                    .forEach(line -> {
+                        String simplified = simplifyLogEntry(line);
+                        if (shouldIncludeLog(simplified)) {
+                            filteredLogs.add(simplified);
+                        }
+                    });
 
             if (filteredLogs.isEmpty()) {
                 response.put("сообщение", "Логи за указанную дату не найдены");
@@ -94,5 +84,36 @@ public class LogController {
             errorResponse.put("причина", e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
         }
+    }
+
+    private boolean shouldIncludeLog(String logEntry) {
+        return logEntry.contains("http-nio")
+                || logEntry.contains("ERROR")
+                || logEntry.contains("WARN")
+                || logEntry.contains("CACHE")
+                || logEntry.contains("Aspect")
+                || logEntry.contains("Controller");
+    }
+
+    private String simplifyLogEntry(String logEntry) {
+        Matcher matcher = LOG_PATTERN.matcher(logEntry);
+        if (matcher.matches()) {
+            String time = matcher.group(0).split(" ")[1];
+            String thread = matcher.group(1);
+            String level = matcher.group(2);
+            String message = matcher.group(4) != null ? matcher.group(4) : matcher.group(3);
+
+            message = message.replaceAll("org\\.springframework\\.", "")
+                    .replaceAll("com\\.univer\\.bookcom\\.", "")
+                    .replaceAll("\\s+", " ")
+                    .trim();
+
+            return String.format("%s [%s] %s: %s",
+                    time,
+                    thread.replace("http-nio-8080-exec-", "req-"),
+                    level,
+                    message);
+        }
+        return logEntry;
     }
 }

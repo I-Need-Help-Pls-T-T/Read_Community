@@ -79,8 +79,18 @@ public class User {
     }
 
     public void addBook(Book book) {
-        books.add(book);
-        book.getAuthors().add(this);
+        if (this.books == null) {
+            this.books = new ArrayList<>();
+        }
+        if (!this.books.contains(book)) {
+            this.books.add(book);
+            if (book.getAuthors() == null) {
+                book.setAuthors(new ArrayList<>());
+            }
+            if (!book.getAuthors().contains(this)) {
+                book.getAuthors().add(this);
+            }
+        }
     }
 
     public void removeBook(Book book) {
@@ -94,5 +104,9 @@ public class User {
 
     public void setBooks(List<Book> books) {
         this.books = books;
+    }
+
+    public void setComments(List<Comments> comments) {
+        this.comments = comments;
     }
 }

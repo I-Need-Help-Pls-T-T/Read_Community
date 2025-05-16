@@ -11,7 +11,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +19,7 @@ import com.univer.bookcom.cache.CacheEntry;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
+import com.univer.bookcom.model.Comments;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.BookRepository;
 import com.univer.bookcom.repository.CommentsRepository;
@@ -33,6 +33,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +44,8 @@ class UserServiceTest {
     private BookRepository bookRepository;
     private CacheContainer cacheContainer;
     private UserService userService;
+
+    private static final Long USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -335,5 +338,55 @@ class UserServiceTest {
 
         assertThrows(UserNotFoundException.class, () ->
                 userService.addBooksToUserBulk(1L, List.of(new Book())));
+    }
+
+    @Test
+    void deleteUser_UserNotFound_ShouldThrowException() {
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+                () -> userService.deleteUser(USER_ID));
+
+        assertEquals("Пользователь с id 1 не найден", exception.getMessage());
+    }
+
+    @Test
+    void deleteUser_WithCommentsAndBooks_ShouldCleanAllDependencies() {
+        User user = new User();
+        user.setId(USER_ID);
+
+        List<Comments> comments = Arrays.asList(new Comments(), new Comments());
+        user.setComments(comments);
+
+        Book bookWithSingleAuthor = new Book();
+        bookWithSingleAuthor.setAuthors(new ArrayList<>(List.of(user)));
+
+        User otherUser = new User();
+        otherUser.setId(2L);
+        Book bookWithMultipleAuthors = new Book();
+        bookWithMultipleAuthors.setAuthors(new ArrayList<>(List.of(user, otherUser)));
+
+        user.setBooks(List.of(bookWithSingleAuthor, bookWithMultipleAuthors));
+
+        Map<Long, CacheEntry<User>> userCacheMock = mock(Map.class);
+        when(cacheContainer.getUserCache()).thenReturn(userCacheMock);
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        userService.deleteUser(USER_ID);
+
+        verify(commentsRepository).deleteAll(comments);
+
+        verify(bookRepository).delete(bookWithSingleAuthor);
+
+        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
+        verify(bookRepository).save(bookCaptor.capture());
+
+        Book savedBook = bookCaptor.getValue();
+        assertEquals(1, savedBook.getAuthors().size());
+        assertTrue(savedBook.getAuthors().contains(otherUser));
+
+        verify(userRepository).delete(user);
+        verify(userCacheMock).remove(USER_ID);
     }
 }

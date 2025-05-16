@@ -115,32 +115,22 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.8</version>
-				<configuration>
-					<destFile>D:/javaProject/coverage/jacoco.exec</destFile>
-				</configuration>
+				<version>0.8.10</version>
 				<executions>
 					<execution>
-						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
-						<phase>initialize</phase>
 					</execution>
 					<execution>
 						<id>report</id>
+						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
-						<phase>verify</phase>
-						<configuration>
-							<dataFile>D:/javaProject/coverage/jacoco.exec</dataFile>
-							<outputDirectory>${project.build.directory}/jacoco-report</outputDirectory>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 	</build>
 

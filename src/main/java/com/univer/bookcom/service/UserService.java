@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -119,54 +121,53 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
 
+        Set<String> existingKeys = user.getBooks().stream()
+                .map(this::generateBookKey)
+                .collect(Collectors.toSet());
+
         List<Book> added = new ArrayList<>();
 
         for (Book bookToAdd : books) {
-            boolean skip = false;
-
-            for (Book existingBook : user.getBooks()) {
-                if (bookToAdd.getTitle().equals(existingBook.getTitle())
-                        && bookToAdd.getCountChapters() == existingBook.getCountChapters()
-                        && bookToAdd.getPublicYear() == existingBook.getPublicYear()
-                        && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
-                    log.info("Пропущен дубликат книги (уже у пользователя): {}",
-                            bookToAdd.getTitle());
-                    skip = true;
-                    break;
-                }
-            }
-
-            if (!skip) {
-                Optional<Book> bookInDbOpt =
-                        bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
-                                bookToAdd.getTitle(),
-                                bookToAdd.getCountChapters(),
-                                bookToAdd.getPublicYear(),
-                                bookToAdd.getBookStatus());
-
-                if (bookInDbOpt.isPresent()) {
-                    Book bookInDb = bookInDbOpt.get();
-                    if (!bookInDb.getAuthors().contains(user)) {
-                        log.info("Пропущен дубликат книги (у других авторов): {}",
-                                bookToAdd.getTitle());
-                        skip = true;
-                    }
-                } else {
-                    bookToAdd = bookRepository.save(bookToAdd);
-                }
-            }
-
-            if (skip) {
+            String key = generateBookKey(bookToAdd);
+            if (existingKeys.contains(key)) {
+                log.info("Пропущен дубликат книги (уже у пользователя): {}", bookToAdd.getTitle());
                 continue;
             }
 
-            bookToAdd.addAuthor(user);
-            added.add(bookToAdd);
+            Optional<Book> bookInDbOpt =
+                    bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
+                    bookToAdd.getTitle(), bookToAdd.getCountChapters(), bookToAdd.getPublicYear(),
+                    bookToAdd.getBookStatus());
+
+            Book targetBook;
+            if (bookInDbOpt.isPresent()) {
+                targetBook = bookInDbOpt.get();
+                if (targetBook.getAuthors().contains(user)) {
+                    log.info("Пропущена книга, которая уже принадлежит пользователю: {}",
+                            bookToAdd.getTitle());
+                    continue;
+                } else if (!targetBook.getAuthors().isEmpty()) {
+                    log.info("Пропущен дубликат книги (у других авторов): {}",
+                            bookToAdd.getTitle());
+                    continue;
+                }
+            } else {
+                targetBook = bookRepository.save(bookToAdd);
+            }
+
+            targetBook.addAuthor(user);
+            added.add(targetBook);
+            existingKeys.add(key);
         }
 
         userRepository.save(user);
         cacheContainer.getUserCache().put(user.getId(), new CacheEntry<>(user));
 
         return added;
+    }
+
+    private String generateBookKey(Book book) {
+        return book.getTitle() + "|" + book.getCountChapters() + "|"
+                + book.getPublicYear() + "|" + book.getBookStatus();
     }
 }

@@ -1,11 +1,8 @@
 package com.univer.bookcom.aspect;
 
-import com.univer.bookcom.exception.BookNotFoundException;
-import com.univer.bookcom.exception.UserNotFoundException;
-import com.univer.bookcom.exception.CommentNotFoundException;
-import com.univer.bookcom.exception.ServiceExecutionException;
-import java.util.Arrays;
+import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -13,6 +10,8 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Aspect
 @Component
@@ -22,71 +21,35 @@ public class LoggingAspect {
     @Pointcut("within(com.univer.bookcom.controller..*)")
     public void controllerPointcut() {}
 
-    @Pointcut("within(com.univer.bookcom.service..*)")
-    public void servicePointcut() {}
-
     @Around("controllerPointcut()")
     public Object logController(ProceedingJoinPoint joinPoint) throws Throwable {
-        if (log.isInfoEnabled()) {
-            log.info("==> {}.{}() с аргументами: {}",
-                    joinPoint.getSignature().getDeclaringTypeName(),
-                    joinPoint.getSignature().getName(),
-                    Arrays.toString(joinPoint.getArgs()));
-        }
+        HttpServletRequest request = ((ServletRequestAttributes)
+            RequestContextHolder.currentRequestAttributes()).getRequest();
+
+        String httpMethod = request.getMethod();
+        String requestURI = request.getRequestURI();
+
+        String actionDescription = joinPoint.getSignature().getName();
+
+        log.info("Request: {} {} -> {}", httpMethod, requestURI, actionDescription);
 
         try {
             Object result = joinPoint.proceed();
-
-            if (log.isInfoEnabled()) {
-                log.info("<== {}.{}() с результатом: {}",
-                        joinPoint.getSignature().getDeclaringTypeName(),
-                        joinPoint.getSignature().getName(),
-                        result != null ? result : "null");
-            }
-
+            log.info("Response: {} {} -> успешно выполнен", httpMethod, requestURI);
             return result;
-        } catch (BookNotFoundException | UserNotFoundException | CommentNotFoundException e) {
+        } catch (Exception e) {
+            log.error("Ошибка при выполнении {} {}: {}", httpMethod, requestURI, e.toString());
             throw e;
-        } catch (Exception e) {
-            String message = String.format("Ошибка в %s.%s() с исключением: %s",
-                    joinPoint.getSignature().getDeclaringTypeName(),
-                    joinPoint.getSignature().getName(),
-                    e.getClass().getSimpleName());
-            throw new ServiceExecutionException(message, e);
         }
     }
 
-    @Around("servicePointcut()")
-    public Object logService(ProceedingJoinPoint joinPoint) throws Throwable {
-        if (log.isDebugEnabled()) {
-            log.debug("==> {}.{}() с аргументами: {}",
-                    joinPoint.getSignature().getDeclaringTypeName(),
-                    joinPoint.getSignature().getName(),
-                    Arrays.toString(joinPoint.getArgs()));
-        }
-
-        try {
-            Object result = joinPoint.proceed();
-
-            if (log.isDebugEnabled()) {
-                log.debug("<== {}.{}() с результатом: {}",
-                        joinPoint.getSignature().getDeclaringTypeName(),
-                        joinPoint.getSignature().getName(),
-                        result != null ? result : "null");
-            }
-
-            return result;
-        } catch (Exception e) {
-            String message = String.format("Ошибка в %s.%s() с исключением: %s",
-                    joinPoint.getSignature().getDeclaringTypeName(),
-                    joinPoint.getSignature().getName(),
-                    e.getClass().getSimpleName());
-            throw new ServiceExecutionException(message, e);
-        }
+    @AfterReturning(pointcut = "within(com.univer.bookcom.service..*) && execution(* add*(..))", returning = "result")
+    public void logCacheAdd(Object result) {
+        log.info("Добавление в кэш: результат = {}", result);
     }
 
-    @AfterThrowing(pointcut = "controllerPointcut() || servicePointcut()", throwing = "e")
-    public void logAfterThrowing(Exception e) {
-        log.error("Исключение в приложении", e);
+    @AfterThrowing(pointcut = "within(com.univer.bookcom.service..*)", throwing = "ex")
+    public void logServiceException(Exception ex) {
+        log.error("Ошибка в сервисе: {}", ex.toString());
     }
 }
