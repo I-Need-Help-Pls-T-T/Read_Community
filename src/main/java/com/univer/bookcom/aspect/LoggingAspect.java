@@ -24,18 +24,17 @@ public class LoggingAspect {
     @Around("controllerPointcut()")
     public Object logController(ProceedingJoinPoint joinPoint) throws Throwable {
         HttpServletRequest request = ((ServletRequestAttributes)
-            RequestContextHolder.currentRequestAttributes()).getRequest();
+                RequestContextHolder.currentRequestAttributes()).getRequest();
 
         String httpMethod = request.getMethod();
         String requestURI = request.getRequestURI();
+        String action = joinPoint.getSignature().getName();
 
-        String actionDescription = joinPoint.getSignature().getName();
-
-        log.info("Request: {} {} -> {}", httpMethod, requestURI, actionDescription);
+        log.info("Request: {} {} -> {}", httpMethod, requestURI, action);
 
         try {
             Object result = joinPoint.proceed();
-            log.info("Response: {} {} -> успешно выполнен", httpMethod, requestURI);
+            log.info("Response: {} {} -> завершен", httpMethod, requestURI);
             return result;
         } catch (Exception e) {
             log.error("Ошибка при выполнении {} {}: {}", httpMethod, requestURI, e.toString());
@@ -43,12 +42,14 @@ public class LoggingAspect {
         }
     }
 
-    @AfterReturning(pointcut = "within(com.univer.bookcom.service..*) && execution(* add*(..))", returning = "result")
+    @AfterReturning(pointcut = "within(com.univer.bookcom.service..*) && execution(* add*(..))",
+            returning = "result")
     public void logCacheAdd(Object result) {
         log.info("Добавление в кэш: результат = {}", result);
     }
 
-    @AfterThrowing(pointcut = "within(com.univer.bookcom.service..*)", throwing = "ex")
+    @AfterThrowing(pointcut = "within(com.univer.bookcom.service..*)",
+            throwing = "ex")
     public void logServiceException(Exception ex) {
         log.error("Ошибка в сервисе: {}", ex.toString());
     }

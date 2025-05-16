@@ -1,5 +1,6 @@
 package com.univer.bookcom.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,10 +35,12 @@ public class User {
     @Size(min = 6, message = "Пароль должен содержать не менее 6 символов")
     private String password;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL)
     private List<Book> books = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();

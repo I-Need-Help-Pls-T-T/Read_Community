@@ -98,7 +98,7 @@ public class LogController {
     private String simplifyLogEntry(String logEntry) {
         Matcher matcher = LOG_PATTERN.matcher(logEntry);
         if (matcher.matches()) {
-            String time = matcher.group(0).split(" ")[1];
+            String time = matcher.group(0).split(" ")[1]; // время
             String thread = matcher.group(1);
             String level = matcher.group(2);
             String message = matcher.group(4) != null ? matcher.group(4) : matcher.group(3);
@@ -108,12 +108,21 @@ public class LogController {
                     .replaceAll("\\s+", " ")
                     .trim();
 
-            return String.format("%s [%s] %s: %s",
+            Pattern statusPattern = Pattern.compile("статус: (\\d{3})");
+            Matcher statusMatcher = statusPattern.matcher(message);
+            String statusPart = "";
+            if (statusMatcher.find()) {
+                statusPart = " | status: " + statusMatcher.group(1);
+            }
+
+            return String.format("%s [%s] %s: %s%s",
                     time,
                     thread.replace("http-nio-8080-exec-", "req-"),
                     level,
-                    message);
+                    message,
+                    statusPart);
         }
         return logEntry;
     }
+
 }
