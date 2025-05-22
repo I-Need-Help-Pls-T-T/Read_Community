@@ -2,18 +2,19 @@ package com.univer.bookcom.service;
 
 import com.univer.bookcom.cache.CacheContainer;
 import com.univer.bookcom.cache.CacheEntry;
+import com.univer.bookcom.exception.InvalidBookDataException;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.BookRepository;
 import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -117,57 +118,86 @@ public class UserService {
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
     }
 
+    @Transactional
     public List<Book> addBooksToUserBulk(Long userId, List<Book> books) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
+        log.debug("Начало добавления книг пользователю с ID: {}", userId);
 
-        Set<String> existingKeys = user.getBooks().stream()
-                .map(this::generateBookKey)
-                .collect(Collectors.toSet());
+        if (books == null || books.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь с ID {} не найден", userId);
+            return new UserNotFoundException(String.format(USER_NOT_FOUND, userId));
+        });
 
         List<Book> added = new ArrayList<>();
 
         for (Book bookToAdd : books) {
-            String key = generateBookKey(bookToAdd);
-            if (existingKeys.contains(key)) {
-                log.info("Пропущен дубликат книги (уже у пользователя): {}", bookToAdd.getTitle());
+            log.debug("Обработка книги: {}", bookToAdd.getTitle());
+
+            if (bookToAdd.getTitle() == null || bookToAdd.getTitle().trim().isEmpty()) {
+                throw new InvalidBookDataException("Название книги не может быть пустым");
+            }
+            if (bookToAdd.getCountChapters() < 0) {
+                throw new InvalidBookDataException("Количество глав не может быть отрицательным");
+            }
+            if (bookToAdd.getPublicYear() < 0) {
+                throw new InvalidBookDataException("Год публикации не может быть отрицательным");
+            }
+            if (bookToAdd.getBookStatus() == null) {
+                throw new InvalidBookDataException("Статус книги не может быть null");
+            }
+
+            boolean isDuplicate = false;
+
+            for (Book existingBook : user.getBooks()) {
+                if (bookToAdd.getTitle().equals(existingBook.getTitle())
+                        && bookToAdd.getCountChapters() == existingBook.getCountChapters()
+                        && bookToAdd.getPublicYear() == existingBook.getPublicYear()
+                        && bookToAdd.getBookStatus() == existingBook.getBookStatus()) {
+                    isDuplicate = true;
+                    log.info("Пропущен дубликат книги (у пользователя): {}", bookToAdd.getTitle());
+                    break;
+                }
+            }
+            if (isDuplicate) {
                 continue;
             }
 
             Optional<Book> bookInDbOpt =
                     bookRepository.findByTitleAndCountChaptersAndPublicYearAndStatus(
-                    bookToAdd.getTitle(), bookToAdd.getCountChapters(), bookToAdd.getPublicYear(),
+                    bookToAdd.getTitle(),
+                    bookToAdd.getCountChapters(),
+                    bookToAdd.getPublicYear(),
                     bookToAdd.getBookStatus());
 
-            Book targetBook;
             if (bookInDbOpt.isPresent()) {
-                targetBook = bookInDbOpt.get();
-                if (targetBook.getAuthors().contains(user)) {
-                    log.info("Пропущена книга, которая уже принадлежит пользователю: {}",
-                            bookToAdd.getTitle());
-                    continue;
-                } else if (!targetBook.getAuthors().isEmpty()) {
+                Book bookInDb = bookInDbOpt.get();
+                if (!bookInDb.getAuthors().contains(user)) {
                     log.info("Пропущен дубликат книги (у других авторов): {}",
                             bookToAdd.getTitle());
                     continue;
+                } else {
+                    log.debug("Книга с таким названием уже есть "
+                                    + "у пользователя, добавляем автора: {}",
+                            bookToAdd.getTitle());
+                    bookToAdd = bookInDb;
                 }
             } else {
-                targetBook = bookRepository.save(bookToAdd);
+                log.debug("Сохраняем новую книгу в базу: {}", bookToAdd.getTitle());
+                bookToAdd = bookRepository.save(bookToAdd);
             }
 
-            targetBook.addAuthor(user);
-            added.add(targetBook);
-            existingKeys.add(key);
+            bookToAdd.addAuthor(user);
+            added.add(bookToAdd);
+            log.info("Книга успешно добавлена: {}", bookToAdd.getTitle());
         }
 
         userRepository.save(user);
         cacheContainer.getUserCache().put(user.getId(), new CacheEntry<>(user));
+        log.debug("Завершено добавление книг пользователю с ID: {}", userId);
 
         return added;
-    }
-
-    private String generateBookKey(Book book) {
-        return book.getTitle() + "|" + book.getCountChapters() + "|"
-                + book.getPublicYear() + "|" + book.getBookStatus();
     }
 }

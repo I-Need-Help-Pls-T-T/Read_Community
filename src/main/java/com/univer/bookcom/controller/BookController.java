@@ -1,9 +1,6 @@
 package com.univer.bookcom.controller;
 
-import com.univer.bookcom.exception.BookNotFoundException;
-import com.univer.bookcom.exception.InvalidStatusException;
-import com.univer.bookcom.exception.InvalidYearException;
-import com.univer.bookcom.exception.UserNotFoundException;
+import com.univer.bookcom.exception.*;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
@@ -20,7 +17,11 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -215,25 +216,26 @@ public class BookController {
             })
     @GetMapping("/search/year")
     public ResponseEntity<List<Book>> searchBooksByYear(
-            @RequestParam
-            @Min(value = 1000, message = "Год должен быть не меньше 1000")
-            @Max(value = 2100, message = "Год должен быть не больше 2100")
-            Long year) {
-        log.debug("Обработка поиска книг по году");
+            @RequestParam Long year) {
 
-        if (year == null) {
-            log.error("Некорректный год: null");
-            throw new InvalidYearException("Год не может быть null");
+        if (year == null || year < 1000 || year > 2100) {
+            Map<String, String> errors = new HashMap<>();
+            if (year == null) {
+                errors.put("year", "Год не может быть null");
+            } else if (year < 1000) {
+                errors.put("year", "Год должен быть не меньше 1000");
+            } else if (year > 2100) {
+                errors.put("year", "Год должен быть не больше 2100");
+            }
+            throw new CustomValidationException(errors);
         }
 
         List<Book> books = bookService.findBooksByPublicYear(year);
 
         if (books.isEmpty()) {
-            log.warn("Книги за указанный год не найдены");
             throw new BookNotFoundException("Книги не найдены");
         }
 
-        log.info("Найдено {} книг за указанный год", books.size());
         return ResponseEntity.ok(books);
     }
 
@@ -272,7 +274,7 @@ public class BookController {
     @Operation(summary = "Добавить автора к книге",
             responses = {
                 @ApiResponse(responseCode = "204", description = "Автор успешно добавлен"),
-                @ApiResponse(responseCode = "404", description = "Книга или автор не найдены",
+                @ApiResponse(responseCode = "404", description = "Книга не найдена",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Книга или автор не найдены\"}"))),
                 @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",

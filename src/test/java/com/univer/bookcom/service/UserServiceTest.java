@@ -11,11 +11,13 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.univer.bookcom.cache.CacheContainer;
 import com.univer.bookcom.cache.CacheEntry;
+import com.univer.bookcom.exception.InvalidBookDataException;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
@@ -26,6 +28,7 @@ import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -388,5 +391,119 @@ class UserServiceTest {
 
         verify(userRepository).delete(user);
         verify(userCacheMock).remove(USER_ID);
+    }
+
+    @Test
+    void addBooksToUserBulk_EmptyTitle_ThrowsInvalidBookDataException() {
+        User user = new User();
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        Book invalidBook = new Book();
+        invalidBook.setTitle("");
+        invalidBook.setCountChapters(5);
+        invalidBook.setPublicYear(2010);
+        invalidBook.setBookStatus(BookStatus.ANNOUNCED);
+
+        InvalidBookDataException ex = assertThrows(
+                InvalidBookDataException.class,
+                () -> userService.addBooksToUserBulk(USER_ID, List.of(invalidBook))
+        );
+
+        assertEquals("Название книги не может быть пустым", ex.getMessage());
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void addBooksToUserBulk_NullTitle_ThrowsInvalidBookDataException() {
+        User user = new User();
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        Book invalidBook = new Book();
+        invalidBook.setTitle(null);
+        invalidBook.setCountChapters(5);
+        invalidBook.setPublicYear(2010);
+        invalidBook.setBookStatus(BookStatus.ANNOUNCED);
+
+        InvalidBookDataException ex = assertThrows(
+                InvalidBookDataException.class,
+                () -> userService.addBooksToUserBulk(USER_ID, List.of(invalidBook))
+        );
+
+        assertEquals("Название книги не может быть пустым", ex.getMessage());
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void addBooksToUserBulk_NegativeChapters_ThrowsInvalidBookDataException() {
+        User user = new User();
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        Book invalidBook = new Book();
+        invalidBook.setTitle("Valid Title");
+        invalidBook.setCountChapters(-1L);
+        invalidBook.setPublicYear(2010);
+        invalidBook.setBookStatus(BookStatus.ANNOUNCED);
+
+        InvalidBookDataException ex = assertThrows(
+                InvalidBookDataException.class,
+                () -> userService.addBooksToUserBulk(USER_ID, List.of(invalidBook))
+        );
+
+        assertEquals("Количество глав не может быть отрицательным", ex.getMessage());
+        verify(bookRepository, never()).save(any());
+    }
+
+
+    @Test
+    void addBooksToUserBulk_NegativeYear_ThrowsInvalidBookDataException() {
+        User user = new User();
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        Book invalidBook = new Book();
+        invalidBook.setTitle("A");
+        invalidBook.setCountChapters(5);
+        invalidBook.setPublicYear(-2020L);
+        invalidBook.setBookStatus(BookStatus.ANNOUNCED);
+
+        InvalidBookDataException ex = assertThrows(
+                InvalidBookDataException.class,
+                () -> userService.addBooksToUserBulk(USER_ID, List.of(invalidBook))
+        );
+
+        assertEquals("Год публикации не может быть отрицательным", ex.getMessage());
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void addBooksToUserBulk_NullStatus_ThrowsInvalidBookDataException() {
+        User user = new User();
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        Book invalidBook = new Book();
+        invalidBook.setTitle("A");
+        invalidBook.setCountChapters(5);
+        invalidBook.setPublicYear(2010);
+        invalidBook.setBookStatus(null);
+
+        InvalidBookDataException ex = assertThrows(
+                InvalidBookDataException.class,
+                () -> userService.addBooksToUserBulk(USER_ID, List.of(invalidBook))
+        );
+
+        assertEquals("Статус книги не может быть null", ex.getMessage());
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void addBooksToUserBulk_EmptyBookList_ReturnsEmptyList() {
+        List<Book> result = userService.addBooksToUserBulk(USER_ID, Collections.emptyList());
+
+        assertTrue(result.isEmpty(), "Expected empty list when books is empty");
+        verify(bookRepository, never()).save(any());
     }
 }

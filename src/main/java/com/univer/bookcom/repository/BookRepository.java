@@ -22,8 +22,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByAuthorsContaining(User author);
 
     Optional<Book> findByTitleAndCountChaptersAndPublicYearAndStatus(
-            String title,
-            long countChapters,
-            long publicYear,
-            BookStatus status);
+            String title, long countChapters, long publicYear, BookStatus status
+    );
 }

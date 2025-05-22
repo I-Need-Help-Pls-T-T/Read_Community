@@ -54,10 +54,10 @@ public class UserController {
     @Operation(summary = "Получить всех пользователей",
             description = "Возвращает список всех пользователей",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователи найдены",
+                @ApiResponse(responseCode = "200", description = "Пользователи найдены",
                             content = @Content(array = @ArraySchema(
                                     schema = @Schema(implementation = User.class)))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -72,15 +72,15 @@ public class UserController {
     @Operation(summary = "Получить пользователя по ID",
             description = "Возвращает пользователя по указанному ID",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователь найден",
+                @ApiResponse(responseCode = "200", description = "Пользователь найден",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                    @ApiResponse(responseCode = "400", description = "Некорректный ID",
+                @ApiResponse(responseCode = "400", description = "Некорректный ID",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный ID\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -102,12 +102,12 @@ public class UserController {
     @Operation(summary = "Создать пользователя",
             description = "Создает нового пользователя",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Пользователь успешно создан",
+                @ApiResponse(responseCode = "201", description = "Пользователь успешно создан",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                    @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -124,15 +124,15 @@ public class UserController {
     @Operation(summary = "Обновить пользователя",
             description = "Обновляет существующего пользователя",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователь обновлен",
+                @ApiResponse(responseCode = "200", description = "Пользователь обновлен",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                    @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -151,14 +151,14 @@ public class UserController {
     @Operation(summary = "Удалить пользователя",
             description = "Удаляет пользователя и связанные данные",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Пользователь удален"),
-                    @ApiResponse(responseCode = "400", description = "Некорректный ID",
+                @ApiResponse(responseCode = "204", description = "Пользователь удален"),
+                @ApiResponse(responseCode = "400", description = "Некорректный ID",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный ID\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -193,16 +193,16 @@ public class UserController {
     @Operation(summary = "Поиск пользователей по имени",
             description = "Возвращает пользователей по имени",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователи найдены",
+                @ApiResponse(responseCode = "200", description = "Пользователи найдены",
                             content = @Content(array = @ArraySchema(
                                     schema = @Schema(implementation = User.class)))),
-                    @ApiResponse(responseCode = "400", description = "Некорректное имя",
+                @ApiResponse(responseCode = "400", description = "Некорректное имя",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Имя не может быть пустым\"}"))),
-                    @ApiResponse(responseCode = "404", description = "Пользователи не найдены",
+                @ApiResponse(responseCode = "404", description = "Пользователи не найдены",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователи не найдены\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -225,15 +225,15 @@ public class UserController {
     @Operation(summary = "Поиск пользователя по email",
             description = "Возвращает пользователя по email",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователь найден",
+                @ApiResponse(responseCode = "200", description = "Пользователь найден",
                             content = @Content(schema = @Schema(implementation = User.class))),
-                    @ApiResponse(responseCode = "400", description = "Некорректный email",
+                @ApiResponse(responseCode = "400", description = "Некорректный email",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректный формат email\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -255,14 +255,14 @@ public class UserController {
     @Operation(summary = "Добавить книгу пользователю",
             description = "Добавляет книгу в коллекцию пользователя",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Книга добавлена"),
-                    @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                @ApiResponse(responseCode = "204", description = "Книга добавлена"),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные книги\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -281,14 +281,14 @@ public class UserController {
     @Operation(summary = "Удалить книгу у пользователя",
             description = "Удаляет книгу из коллекции пользователя",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Книга удалена"),
-                    @ApiResponse(responseCode = "400", description = "Некорректные ID",
+                @ApiResponse(responseCode = "204", description = "Книга удалена"),
+                @ApiResponse(responseCode = "400", description = "Некорректные ID",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные ID\"}"))),
-                    @ApiResponse(responseCode = "404", description = "Данные не найдены",
+                @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
                                     "{\"ошибка\":\"Пользователь или книга не найдены\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -311,16 +311,16 @@ public class UserController {
     @Operation(summary = "Получить пользователей по книге",
             description = "Возвращает пользователей, связанных с книгой",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пользователи найдены",
+                @ApiResponse(responseCode = "200", description = "Пользователи найдены",
                             content = @Content(array = @ArraySchema(
                                     schema = @Schema(implementation = User.class)))),
-                    @ApiResponse(responseCode = "400", description = "Некорректное название",
+                @ApiResponse(responseCode = "400", description = "Некорректное название",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Название не может быть пустым\"}"))),
-                    @ApiResponse(responseCode = "404", description = "Данные не найдены",
+                @ApiResponse(responseCode = "404", description = "Данные не найдены",
                             content = @Content(schema = @Schema(example =
                                     "{\"ошибка\":\"Книга или пользователи не найдены\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -343,16 +343,16 @@ public class UserController {
     @Operation(summary = "Получить авторов книги",
             description = "Возвращает авторов книги по названию",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Авторы найдены",
+                @ApiResponse(responseCode = "200", description = "Авторы найдены",
                             content = @Content(array = @ArraySchema(
                                     schema = @Schema(implementation = User.class)))),
-                    @ApiResponse(responseCode = "400", description = "Некорректное название",
+                @ApiResponse(responseCode = "400", description = "Некорректное название",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Название не может быть пустым\"}"))),
-                    @ApiResponse(responseCode = "404", description = "Авторы не найдены",
+                @ApiResponse(responseCode = "404", description = "Авторы не найдены",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Авторы не найдены\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
@@ -373,16 +373,25 @@ public class UserController {
     }
 
     @Operation(summary = "Добавить несколько книг пользователю",
-            description = "Добавляет несколько книг в коллекцию пользователя",
+            description = "Добавляет несколько книг пользователю. "
+                    + "Книга не будет добавлена, если у пользователя уже "
+                    + "есть книга с таким названием",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Список книг для добавления",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = Book.class))
+            ),
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Книги успешно добавлены"),
-                    @ApiResponse(responseCode = "400", description = "Некорректные данные",
+                @ApiResponse(responseCode = "200", description = "Книги успешно добавлены",
+                            content = @Content(array = @ArraySchema
+                                    (schema = @Schema(implementation = Book.class)))),
+                @ApiResponse(responseCode = "400", description = "Некорректные данные",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Некорректные данные\"}"))),
-                    @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Пользователь не найден\"}"))),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
                             content = @Content(schema = @Schema(
                                     example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
             })
