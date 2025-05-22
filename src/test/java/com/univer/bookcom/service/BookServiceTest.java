@@ -181,7 +181,7 @@ class BookServiceTest {
     }
 
     @Test
-    void testFindBooksByAuthor_String() {
+    void testFindBooksByAuthorString() {
         List<Book> expected = List.of(new Book());
         when(bookRepository.findByAuthor("SomeAuthor")).thenReturn(expected);
 
@@ -189,7 +189,7 @@ class BookServiceTest {
     }
 
     @Test
-    void testFindBooksByAuthor_User() {
+    void testFindBooksByAuthorUser() {
         User author = new User();
         List<Book> expected = List.of(new Book());
         when(bookRepository.findByAuthorsContaining(author)).thenReturn(expected);

@@ -95,7 +95,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void createComment_ShouldCreateAndReturnComment() {
+    void createCommentShouldCreateAndReturnComment() {
         when(bookRepository.findById(1L)).thenReturn(Optional.of(testBook));
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(commentsRepository.save(any(Comments.class))).thenReturn(testComment);
@@ -117,7 +117,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void createComment_ShouldThrowBookNotFoundException() {
+    void createCommentShouldThrowBookNotFoundException() {
         when(bookRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(BookNotFoundException.class,
@@ -130,7 +130,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void getCommentsByBookId_ShouldReturnCommentsList() {
+    void getCommentsByBookIdShouldReturnCommentsList() {
         when(commentsRepository.findByBookId(1L)).thenReturn(List.of(testComment));
 
         List<Comments> result = commentsService.getCommentsByBookId(1L);
@@ -146,7 +146,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void updateComment_ShouldUpdateAndReturnComment() {
+    void updateCommentShouldUpdateAndReturnComment() {
         Comments updatedComment = createUpdatedComment();
 
         when(commentsRepository.findById(1L)).thenReturn(Optional.of(testComment));
@@ -175,7 +175,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void deleteComment_ShouldDeleteComment() {
+    void deleteCommentShouldDeleteComment() {
         when(commentsRepository.findById(1L)).thenReturn(Optional.of(testComment));
         doNothing().when(commentsRepository).delete(testComment);
 
@@ -187,7 +187,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void createComment_ShouldThrowUserNotFoundException() {
+    void createCommentShouldThrowUserNotFoundException() {
         when(bookRepository.findById(1L)).thenReturn(Optional.of(testBook));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -202,7 +202,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void getCommentsByUserId_ShouldReturnCommentsList() {
+    void getCommentsByUserIdShouldReturnCommentsList() {
         when(commentsRepository.findByUserId(1L)).thenReturn(List.of(testComment));
 
         List<Comments> result = commentsService.getCommentsByUserId(1L);
@@ -218,7 +218,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void updateComment_ShouldThrowCommentNotFoundException() {
+    void updateCommentShouldThrowCommentNotFoundException() {
         when(commentsRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(CommentNotFoundException.class,
@@ -231,7 +231,7 @@ class CommentsServiceTest {
     }
 
     @Test
-    void deleteComment_ShouldThrowCommentNotFoundException() {
+    void deleteCommentShouldThrowCommentNotFoundException() {
         when(commentsRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(CommentNotFoundException.class,

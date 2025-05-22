@@ -3,7 +3,6 @@ package com.univer.bookcom.exception;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -11,10 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -139,7 +136,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CustomValidationException.class)
-    public ResponseEntity<Map<String, Object>> handleCustomValidationException(CustomValidationException ex) {
+    public ResponseEntity<Map<String,
+            Object>> handleCustomValidationException(CustomValidationException ex) {
         log.warn("Custom validation failed: {}", ex.getErrors());
         return buildValidationErrorResponse(
                 HttpStatus.BAD_REQUEST,

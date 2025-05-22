@@ -27,17 +27,17 @@ public class LoggingAspect {
                 RequestContextHolder.currentRequestAttributes()).getRequest();
 
         String httpMethod = request.getMethod();
-        String requestURI = request.getRequestURI();
+        String requestUri = request.getRequestURI();
         String action = joinPoint.getSignature().getName();
 
-        log.info("Request: {} {} -> {}", httpMethod, requestURI, action);
+        log.info("Request: {} {} -> {}", httpMethod, requestUri, action);
 
         try {
             Object result = joinPoint.proceed();
-            log.info("Response: {} {} -> завершен", httpMethod, requestURI);
+            log.info("Response: {} {} -> завершен", httpMethod, requestUri);
             return result;
         } catch (Exception e) {
-            log.error("Ошибка при выполнении {} {}: {}", httpMethod, requestURI, e.toString());
+            log.error("Ошибка при выполнении {} {}: {}", httpMethod, requestUri, e.toString());
             throw e;
         }
     }

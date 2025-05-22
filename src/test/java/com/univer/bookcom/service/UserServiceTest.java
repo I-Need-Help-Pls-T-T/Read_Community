@@ -344,7 +344,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUser_UserNotFound_ShouldThrowException() {
+    void deleteUserUserNotFoundShouldThrowException() {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         UserNotFoundException exception = assertThrows(UserNotFoundException.class,
@@ -354,7 +354,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUser_WithCommentsAndBooks_ShouldCleanAllDependencies() {
+    void deleteUserWithCommentsAndBooksShouldCleanAllDependencies() {
         User user = new User();
         user.setId(USER_ID);
 
@@ -394,7 +394,7 @@ class UserServiceTest {
     }
 
     @Test
-    void addBooksToUserBulk_EmptyTitle_ThrowsInvalidBookDataException() {
+    void addBooksToUserBulkEmptyTitleThrowsInvalidBookDataException() {
         User user = new User();
         user.setId(USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -415,7 +415,7 @@ class UserServiceTest {
     }
 
     @Test
-    void addBooksToUserBulk_NullTitle_ThrowsInvalidBookDataException() {
+    void addBooksToUserBulkNullTitleThrowsInvalidBookDataException() {
         User user = new User();
         user.setId(USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -436,7 +436,7 @@ class UserServiceTest {
     }
 
     @Test
-    void addBooksToUserBulk_NegativeChapters_ThrowsInvalidBookDataException() {
+    void addBooksToUserBulkNegativeChaptersThrowsInvalidBookDataException() {
         User user = new User();
         user.setId(USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -458,7 +458,7 @@ class UserServiceTest {
 
 
     @Test
-    void addBooksToUserBulk_NegativeYear_ThrowsInvalidBookDataException() {
+    void addBooksToUserBulkNegativeYearThrowsInvalidBookDataException() {
         User user = new User();
         user.setId(USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -479,7 +479,7 @@ class UserServiceTest {
     }
 
     @Test
-    void addBooksToUserBulk_NullStatus_ThrowsInvalidBookDataException() {
+    void addBooksToUserBulkNullStatusThrowsInvalidBookDataException() {
         User user = new User();
         user.setId(USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -500,7 +500,7 @@ class UserServiceTest {
     }
 
     @Test
-    void addBooksToUserBulk_EmptyBookList_ReturnsEmptyList() {
+    void addBooksToUserBulkEmptyBookListReturnsEmptyList() {
         List<Book> result = userService.addBooksToUserBulk(USER_ID, Collections.emptyList());
 
         assertTrue(result.isEmpty(), "Expected empty list when books is empty");
