@@ -1,6 +1,6 @@
 package com.univer.bookcom.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,20 +40,22 @@ public class Book {
     @Enumerated(EnumType.STRING)
     private BookStatus status;
 
-    @SuppressWarnings("checkstyle:Indentation")
-    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE,
-            CascadeType.PERSIST, CascadeType.REFRESH}, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}, fetch = FetchType.LAZY)
     @JoinTable(
             name = "book_user",
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    @JsonIgnore
     private List<User> authors = new ArrayList<>();
 
-    @OneToMany(mappedBy = "book", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "book", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();
+
+    public Book() {
+        this.authors = new ArrayList<>();
+        this.comments = new ArrayList<>();
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -100,14 +102,8 @@ public class Book {
     }
 
     public void addAuthor(User author) {
-        if (this.authors == null) {
-            this.authors = new ArrayList<>();
-        }
         if (!this.authors.contains(author)) {
             this.authors.add(author);
-            if (author.getBooks() == null) {
-                author.setBooks(new ArrayList<>());
-            }
             if (!author.getBooks().contains(this)) {
                 author.getBooks().add(this);
             }
@@ -115,7 +111,7 @@ public class Book {
     }
 
     public void removeAuthor(User author) {
-        authors.remove(author);
+        this.authors.remove(author);
         author.getBooks().remove(this);
     }
 
@@ -125,9 +121,7 @@ public class Book {
                 author.getBooks().remove(this);
             }
         }
-
         this.authors = authors != null ? new ArrayList<>(authors) : new ArrayList<>();
-
         if (authors != null) {
             for (User author : authors) {
                 if (!author.getBooks().contains(this)) {
@@ -135,5 +129,13 @@ public class Book {
                 }
             }
         }
+    }
+
+    public List<Comments> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comments> comments) {
+        this.comments = comments != null ? new ArrayList<>(comments) : new ArrayList<>();
     }
 }

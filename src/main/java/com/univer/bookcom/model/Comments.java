@@ -39,12 +39,28 @@ public class Comments {
     @JsonIgnore
     private Book book;
 
+    public Comments() {
+        this.createdAt = LocalDateTime.now();
+    }
+
     public long getId() {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getText() {
+        return text;
+    }
+
     public void setText(String text) {
         this.text = text;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
@@ -65,13 +81,5 @@ public class Comments {
 
     public void setBook(Book book) {
         this.book = book;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getText() {
-        return text;
     }
 }

@@ -2,20 +2,22 @@ package com.univer.bookcom.service;
 
 import com.univer.bookcom.cache.CacheContainer;
 import com.univer.bookcom.cache.CacheEntry;
+import com.univer.bookcom.dto.request.CommentsRequestDto;
+import com.univer.bookcom.dto.response.CommentsResponseDto;
 import com.univer.bookcom.exception.BookNotFoundException;
 import com.univer.bookcom.exception.CommentNotFoundException;
 import com.univer.bookcom.exception.UserNotFoundException;
-import com.univer.bookcom.model.Book;
+import com.univer.bookcom.mapper.DtoMapper;
 import com.univer.bookcom.model.Comments;
-import com.univer.bookcom.model.User;
 import com.univer.bookcom.repository.BookRepository;
 import com.univer.bookcom.repository.CommentsRepository;
 import com.univer.bookcom.repository.UserRepository;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentsService {
@@ -29,55 +31,52 @@ public class CommentsService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final CacheContainer cacheContainer;
+    private final DtoMapper dtoMapper;
 
     public CommentsService(CommentsRepository commentsRepository,
                            BookRepository bookRepository,
                            UserRepository userRepository,
-                           CacheContainer cacheContainer) {
+                           CacheContainer cacheContainer,
+                           DtoMapper dtoMapper) {
         this.commentsRepository = commentsRepository;
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.cacheContainer = cacheContainer;
+        this.dtoMapper = dtoMapper;
     }
 
-    public Comments createComment(Long bookId, Long userId, String text) {
-        Book book = bookRepository.findById(bookId).orElseThrow(() ->
-                new BookNotFoundException(BOOK_NOT_FOUND + bookId + NOT_FOUND_MESSAGE));
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new UserNotFoundException(USER_NOT_FOUND + userId + NOT_FOUND_MESSAGE));
-
-        Comments comment = new Comments();
-        comment.setText(text);
-        comment.setCreatedAt(LocalDateTime.now());
-        comment.setBook(book);
-        comment.setUser(user);
-
+    public CommentsResponseDto createComment(CommentsRequestDto commentDto) {
+        Comments comment = dtoMapper.toCommentsEntity(commentDto);
         Comments saved = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(saved.getId(), new CacheEntry<>(saved));
         log.debug("Создан новый комментарий с ID: {}", saved.getId());
-        return saved;
+        return dtoMapper.toCommentsResponseDto(saved);
     }
 
-    public List<Comments> getCommentsByBookId(Long bookId) {
+    public List<CommentsResponseDto> getCommentsByBookId(Long bookId) {
         List<Comments> comments = commentsRepository.findByBookId(bookId);
         log.debug("Найдено {} комментариев для книги с ID: {}", comments.size(), bookId);
-        return comments;
+        return comments.stream()
+                .map(dtoMapper::toCommentsResponseDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Comments> getCommentsByUserId(Long userId) {
+    public List<CommentsResponseDto> getCommentsByUserId(Long userId) {
         List<Comments> comments = commentsRepository.findByUserId(userId);
         log.debug("Найдено {} комментариев пользователя с ID: {}", comments.size(), userId);
-        return comments;
+        return comments.stream()
+                .map(dtoMapper::toCommentsResponseDto)
+                .collect(Collectors.toList());
     }
 
-    public Comments updateComment(Long commentId, String newText) {
+    public CommentsResponseDto updateComment(Long commentId, CommentsRequestDto commentDto) {
         Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
                 new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
-        comment.setText(newText);
+        comment.setText(commentDto.getText());
         Comments updated = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));
         log.debug("Обновлен комментарий с ID: {}", commentId);
-        return updated;
+        return dtoMapper.toCommentsResponseDto(updated);
     }
 
     public void deleteComment(Long commentId) {
@@ -87,7 +86,6 @@ public class CommentsService {
 
         commentsRepository.delete(comment);
         cacheContainer.getCommentsCache().remove(commentId);
-
         log.debug("Комментарий с ID: {} удален", commentId);
     }
 }

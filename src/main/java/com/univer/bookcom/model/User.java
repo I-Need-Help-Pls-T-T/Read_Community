@@ -1,5 +1,6 @@
 package com.univer.bookcom.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -35,15 +36,18 @@ public class User {
     @Size(min = 6, message = "Пароль должен содержать не менее 6 символов")
     private String password;
 
-    @JsonIgnore
-    @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL)
+    @JsonBackReference
+    @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Book> books = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();
+
+    public User() {
+        this.books = new ArrayList<>();
+        this.comments = new ArrayList<>();
+    }
 
     public Long getId() {
         return id;
@@ -82,14 +86,8 @@ public class User {
     }
 
     public void addBook(Book book) {
-        if (this.books == null) {
-            this.books = new ArrayList<>();
-        }
         if (!this.books.contains(book)) {
             this.books.add(book);
-            if (book.getAuthors() == null) {
-                book.setAuthors(new ArrayList<>());
-            }
             if (!book.getAuthors().contains(this)) {
                 book.getAuthors().add(this);
             }
@@ -97,7 +95,7 @@ public class User {
     }
 
     public void removeBook(Book book) {
-        books.remove(book);
+        this.books.remove(book);
         book.getAuthors().remove(this);
     }
 
@@ -106,10 +104,10 @@ public class User {
     }
 
     public void setBooks(List<Book> books) {
-        this.books = books;
+        this.books = books != null ? new ArrayList<>(books) : new ArrayList<>();
     }
 
     public void setComments(List<Comments> comments) {
-        this.comments = comments;
+        this.comments = comments != null ? new ArrayList<>(comments) : new ArrayList<>();
     }
 }
