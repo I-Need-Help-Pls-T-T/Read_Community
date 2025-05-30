@@ -30,4 +30,10 @@ public class UserRequestDto {
     @JsonProperty(required = true)
     @Schema(description = "User's password", example = "securePass123", minLength = 6)
     private String password;
+
+    @Size(min = 6, message = "Текущий пароль должен содержать не менее 6 символов")
+    @JsonProperty
+    @Schema(description = "Текущий пароль пользователя для проверки при обновлении",
+            example = "currentPass123")
+    private String currentPassword;
 }

@@ -63,10 +63,7 @@ public class BookService {
         if (cacheEntry != null) {
             log.debug("Книга найдена в кэше: {}", id);
             Book book = cacheEntry.getValue();
-            Hibernate.initialize(book.getComments());
             Hibernate.initialize(book.getAuthors());
-            log.debug("Коллекция comments для кэшированной книги ID {} инициализирована: {}",
-                    id, Hibernate.isInitialized(book.getComments()));
             log.debug("Коллекция authors для кэшированной книги ID {} инициализирована: {}",
                     id, Hibernate.isInitialized(book.getAuthors()));
             return Optional.of(bookMapper.toResponseDto(book));
@@ -74,10 +71,7 @@ public class BookService {
 
         return bookRepository.findById(id)
                 .map(book -> {
-                    Hibernate.initialize(book.getComments());
                     Hibernate.initialize(book.getAuthors());
-                    log.debug("Коллекция comments для книги ID {} из БД инициализирована: {}",
-                            id, Hibernate.isInitialized(book.getComments()));
                     log.debug("Коллекция authors для книги ID {} из БД инициализирована: {}",
                             id, Hibernate.isInitialized(book.getAuthors()));
                     addToCache(id, book);
@@ -93,12 +87,10 @@ public class BookService {
         existing.setTitle(updatedBookDto.getTitle());
         existing.setCountChapters(updatedBookDto.getCountChapters());
         existing.setPublicYear(updatedBookDto.getPublicYear());
+        existing.setDescription(updatedBookDto.getDescription());
         existing.setBookStatus(BookStatus.valueOf(updatedBookDto.getBookStatus()));
 
-        Hibernate.initialize(existing.getComments());
         Hibernate.initialize(existing.getAuthors());
-        log.debug("Коллекция comments для книги ID {} инициализирована перед обновлением: {}",
-                id, Hibernate.isInitialized(existing.getComments()));
         log.debug("Коллекция authors для книги ID {} инициализирована перед обновлением: {}",
                 id, Hibernate.isInitialized(existing.getAuthors()));
         Book saved = bookRepository.save(existing);
@@ -191,20 +183,14 @@ public class BookService {
                 authorId, bookIds);
 
         Book book = bookMapper.toEntity(bookRequestDto);
-        Hibernate.initialize(book.getComments());
         Hibernate.initialize(book.getAuthors());
-        log.debug("Коллекция comments для новой книги инициализирована: {}",
-                Hibernate.isInitialized(book.getComments()));
         log.debug("Коллекция authors для новой книги инициализирована: {}",
                 Hibernate.isInitialized(book.getAuthors()));
         Book saved = bookRepository.save(book);
 
         if (!bookRepository.existsByIdAndAuthorId(saved.getId(), authorId)) {
             saved.addAuthor(author);
-            Hibernate.initialize(saved.getComments());
             Hibernate.initialize(saved.getAuthors());
-            log.debug("Коллекция comments для книги ID {} инициализирована после добавления автора:"
-                    + "{}", saved.getId(), Hibernate.isInitialized(saved.getComments()));
             log.debug("Коллекция authors для книги ID {} инициализирована после добавления автора:"
                     + "{}", saved.getId(), Hibernate.isInitialized(saved.getAuthors()));
             saved = bookRepository.save(saved);
@@ -228,10 +214,7 @@ public class BookService {
                 log.debug("Удалена устаревшая книга из кэша: {}", entry.getKey());
             });
         }
-        Hibernate.initialize(book.getComments());
         Hibernate.initialize(book.getAuthors());
-        log.debug("Коллекция comments для книги ID {} инициализирована: {}",
-                id, Hibernate.isInitialized(book.getComments()));
         log.debug("Коллекция authors для книги ID {} инициализирована: {}",
                 id, Hibernate.isInitialized(book.getAuthors()));
         bookCache.put(id, new CacheEntry<>(book));
@@ -260,12 +243,9 @@ public class BookService {
 
         try {
             book.addAuthor(author);
-            Hibernate.initialize(book.getComments());
             Hibernate.initialize(book.getAuthors());
-            log.debug("Коллекция comments для книги ID {} инициализирована перед добавлением"
-                    + "автора: {}", bookId, Hibernate.isInitialized(book.getComments()));
-            log.debug("Коллекция authors для книги ID {} инициализирована перед добавлением автора:"
-                    + "{}", bookId, Hibernate.isInitialized(book.getAuthors()));
+            log.debug("Коллекция authors для книги ID {} инициализирована перед добавлением"
+                    + "автора: {}", bookId, Hibernate.isInitialized(book.getAuthors()));
             Book saved = bookRepository.save(book);
             addToCache(saved.getId(), saved);
             log.info("Пользователь с ID {} успешно добавлен к книге ID {}", authorId, bookId);
@@ -333,7 +313,6 @@ public class BookService {
                 log.info("Книга с ID {} удалена, так как не осталось авторов"
                         + "или связанных пользователей", bookId);
             } else {
-                Hibernate.initialize(book.getComments());
                 Hibernate.initialize(book.getAuthors());
                 addToCache(book.getId(), book);
                 log.info("Автор с ID {} удален из книги с ID {}. Книга сохранена.",
@@ -344,5 +323,19 @@ public class BookService {
                     authorId, bookId, e.getMessage());
             throw new RuntimeException("Не удалось удалить автора из книги: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public List<String> getAuthorNamesByBookId(Long bookId) {
+        log.debug("Получение авторов для книги с ID {}", bookId);
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException("Книга с id "
+                        + bookId + " не найдена"));
+        Hibernate.initialize(book.getAuthors());
+        log.debug("Коллекция authors для книги ID {} инициализирована: {}",
+                bookId, Hibernate.isInitialized(book.getAuthors()));
+        return book.getAuthors().stream()
+                .map(User::getName)
+                .collect(Collectors.toList());
     }
 }

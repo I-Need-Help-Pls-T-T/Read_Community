@@ -2,7 +2,6 @@ package com.univer.bookcom.service.mapper;
 
 import com.univer.bookcom.model.Book;
 import com.univer.bookcom.model.BookStatus;
-import com.univer.bookcom.model.Comments;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.model.dto.request.BookRequestDto;
 import com.univer.bookcom.model.dto.response.BookResponseDto;
@@ -19,6 +18,7 @@ public class BookMapper {
         book.setTitle(dto.getTitle());
         book.setCountChapters(dto.getCountChapters());
         book.setPublicYear(dto.getPublicYear());
+        book.setDescription(dto.getDescription());
         book.setBookStatus(BookStatus.valueOf(dto.getBookStatus()));
         return book;
     }
@@ -29,6 +29,7 @@ public class BookMapper {
         dto.setTitle(book.getTitle());
         dto.setCountChapters(book.getCountChapters());
         dto.setPublicYear(book.getPublicYear());
+        dto.setDescription(book.getDescription());
         dto.setBookStatus(book.getBookStatus().name());
 
         if (book.getAuthors() != null && Hibernate.isInitialized(book.getAuthors())) {
@@ -37,14 +38,6 @@ public class BookMapper {
                     .collect(Collectors.toList()));
         } else {
             dto.setAuthorNames(Collections.emptyList());
-        }
-
-        if (book.getComments() != null && Hibernate.isInitialized(book.getComments())) {
-            dto.setCommentTexts(book.getComments().stream()
-                    .map(Comments::getText)
-                    .collect(Collectors.toList()));
-        } else {
-            dto.setCommentTexts(Collections.emptyList());
         }
 
         return dto;

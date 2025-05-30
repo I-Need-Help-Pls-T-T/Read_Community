@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,10 @@ public class Book {
     @Min(value = 1000, message = "Год публикации должен быть не ранее 1000")
     @Max(value = 2100, message = "Год публикации должен быть не позднее 2100")
     private long publicYear;
+
+    @NotBlank(message = "Описание книги не может быть пустым")
+    @Size(max = 1000, message = "Описание книги не должно превышать 1000 символов")
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private BookStatus status;
@@ -87,6 +92,14 @@ public class Book {
 
     public void setPublicYear(long publicYear) {
         this.publicYear = publicYear;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BookStatus getBookStatus() {

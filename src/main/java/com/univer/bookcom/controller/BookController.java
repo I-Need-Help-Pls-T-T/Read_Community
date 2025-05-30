@@ -79,7 +79,7 @@ public class BookController {
             })
     @GetMapping("/{id}")
     public ResponseEntity<BookResponseDto> getBookById(@PathVariable @Positive Long id) {
-        log.debug("Запрос книги по ID {}", id);
+        log.debug("Запрос книги по ID");
         return bookService.getBookById(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> {
@@ -107,7 +107,7 @@ public class BookController {
     public ResponseEntity<BookResponseDto> createBookWithAuthor(
             @PathVariable @Positive Long authorId,
             @Valid @RequestBody BookRequestDto bookRequestDto) {
-        log.debug("Создание книги с автором {}", authorId);
+        log.debug("Создание книги с автором");
         BookResponseDto savedBook = bookService.createBookWithAuthor(authorId, bookRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBook);
     }
@@ -131,7 +131,7 @@ public class BookController {
     public ResponseEntity<BookResponseDto> updateBook(
             @PathVariable @Positive Long id,
             @Valid @RequestBody BookRequestDto updatedBookDto) {
-        log.debug("Обновление книги с ID {}", id);
+        log.debug("Обновление книги с ID");
         BookResponseDto updatedBook = bookService.updateBook(id, updatedBookDto);
         return ResponseEntity.ok(updatedBook);
     }
@@ -148,7 +148,7 @@ public class BookController {
             })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable @Positive Long id) {
-        log.debug("Удаление книги с ID {}", id);
+        log.debug("Удаление книги с ID");
         if (!bookService.isCachedOrExists(id)) {
             throw new BookNotFoundException(BOOK_NOT_FOUND_MSG);
         }
@@ -170,7 +170,7 @@ public class BookController {
     @GetMapping("/search/title")
     public ResponseEntity<List<BookResponseDto>> searchBooksByTitle(
             @RequestParam @NotBlank String title) {
-        log.debug("Выполняется поиск книг по названию: {}", title);
+        log.debug("Выполняется поиск книг по названию");
         List<BookResponseDto> books = bookService.findBooksByTitle(title);
         if (books.isEmpty()) {
             throw new BookNotFoundException("Книги не найдены");
@@ -192,7 +192,7 @@ public class BookController {
     @GetMapping("/search/author")
     public ResponseEntity<List<BookResponseDto>> searchBooksByAuthor(
             @RequestParam @NotBlank String author) {
-        log.debug("Выполняется поиск книг по автору: {}", author);
+        log.debug("Выполняется поиск книг по автору");
         List<BookResponseDto> books = bookService.findBooksByAuthor(author);
         if (books.isEmpty()) {
             throw new BookNotFoundException("Книги не найдены");
@@ -228,7 +228,7 @@ public class BookController {
             }
             throw new CustomValidationException(errors);
         }
-        log.debug("Поиск книг по году публикации: {}", year);
+        log.debug("Поиск книг по году публикации");
         List<BookResponseDto> books = bookService.findBooksByPublicYear(year);
         if (books.isEmpty()) {
             throw new BookNotFoundException("Книги не найдены");
@@ -254,7 +254,7 @@ public class BookController {
     public ResponseEntity<List<BookResponseDto>> searchBooksByStatus(
             @RequestParam @NotBlank(message = "Статус книги не может быть пустым")
             String bookStatus) {
-        log.debug("Обработка поиска книг по статусу: {}", bookStatus);
+        log.debug("Обработка поиска книг по статусу");
         try {
             List<BookResponseDto> books = bookService.findBooksByStatus(bookStatus);
             if (books.isEmpty()) {
@@ -333,5 +333,27 @@ public class BookController {
         bookService.removeAuthorFromBook(bookId, authorId);
         log.info("Автор с ID {} успешно удален из книги с ID {}", authorId, bookId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Получить авторов книги по ID",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Авторы найдены",
+                            content = @Content(schema = @Schema(implementation = List.class))),
+                @ApiResponse(responseCode = "404", description = "Книга не найдена",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Книга не найдена\"}"))),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
+            })
+    @GetMapping("/{id}/authors")
+    public ResponseEntity<List<String>> getAuthorNamesByBookId(@PathVariable @Positive Long id) {
+        log.debug("Запрос авторов для книги с ID {}", id);
+        List<String> authors = bookService.getAuthorNamesByBookId(id);
+        if (authors.isEmpty()) {
+            log.warn("Авторы для книги с ID {} не найдены", id);
+            throw new BookNotFoundException("Авторы не найдены");
+        }
+        return ResponseEntity.ok(authors);
     }
 }

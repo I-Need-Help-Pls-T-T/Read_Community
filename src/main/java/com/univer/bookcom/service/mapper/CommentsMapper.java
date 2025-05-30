@@ -33,6 +33,7 @@ public class CommentsMapper {
 
         if (comment.getUser() != null) {
             dto.setUserName(comment.getUser().getName());
+            dto.setUserId(comment.getUser().getId());
         }
 
         if (comment.getBook() != null) {

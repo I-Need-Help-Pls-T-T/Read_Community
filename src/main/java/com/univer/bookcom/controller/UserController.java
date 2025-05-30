@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -375,5 +376,109 @@ public class UserController {
         List<BookResponseDto> addedBooks = userService.addBooksToUserBulkDto(userId, bookDtos);
         log.info("Успешно добавлено {} книг", addedBooks.size());
         return ResponseEntity.ok(addedBooks);
+    }
+
+    @Operation(summary = "Получить количество книг пользователя",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Количество получено",
+                            content = @Content(schema = @Schema(implementation = Long.class))),
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}"))),
+                @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Внутренняя ошибка сервера\"}")))
+            })
+    @GetMapping("/{id}/published-count")
+    public ResponseEntity<Long> getPublishedBooksCount(
+            @PathVariable @Positive(message = "ID пользователя должен быть положительным числом")
+            Long id) {
+        log.debug("Запрос количества книг для пользователя с ID {}", id);
+        long count = userService.getPublishedBooksCountByUserId(id);
+        log.info("Количество книг: {}", count);
+        return ResponseEntity.ok(count);
+    }
+
+    @Operation(summary = "Проверить пароль пользователя",
+            description = "Проверяет, соответствует ли"
+                    + "предоставленный пароль пользователю с указанным email",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Пароль проверен",
+                            content = @Content(schema = @Schema(implementation = Boolean.class))),
+                @ApiResponse(responseCode = "400", description = "Некорректный email или пароль",
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Некорректный email или пароль\"}"))),
+                @ApiResponse(responseCode = "404", description = USER_NOT_FOUND_MSG,
+                            content = @Content(schema = @Schema(
+                                    example = "{\"ошибка\":\"Пользователь не найден\"}")))
+            })
+    @PostMapping("/verify-password")
+    public ResponseEntity<?> verifyPassword(@RequestBody
+        @Valid PasswordVerificationRequest request) {
+        log.debug("Проверка пароля для email: {}", request.getEmail());
+        boolean isValid = userService.verifyPassword(request.getEmail(), request.getPassword());
+        if (!isValid) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ErrorResponse("Неверный пароль")
+            );
+        }
+        return ResponseEntity.ok(new PasswordVerificationResponse(isValid));
+    }
+
+    static class PasswordVerificationRequest {
+        @NotBlank(message = "Email не может быть пустым")
+        @Email(message = "Некорректный формат email")
+        private String email;
+
+        @NotBlank(message = "Пароль не может быть пустым")
+        private String password;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+    }
+
+    static class PasswordVerificationResponse {
+        private boolean valid;
+
+        public PasswordVerificationResponse(boolean valid) {
+            this.valid = valid;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+    }
+
+    static class ErrorResponse {
+        private String error;
+
+        public ErrorResponse(String error) {
+            this.error = error;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
     }
 }

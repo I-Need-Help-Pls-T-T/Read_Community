@@ -26,4 +26,8 @@ public class CommentsResponseDto {
 
     @Schema(description = "Title of the book the comment is for", example = "The Great Novel")
     private String bookTitle;
+
+    @JsonProperty(required = true)
+    @Schema(description = "ID of the user who made the comment", example = "1")
+    private Long userId;
 }

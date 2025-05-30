@@ -104,6 +104,14 @@ public class CommentsService {
     public CommentsResponseDto updateCommentDto(Long commentId, CommentsRequestDto commentDto) {
         Comments comment = commentsRepository.findById(commentId).orElseThrow(() ->
                 new CommentNotFoundException(COMMENT_NOT_FOUND + commentId + NOT_FOUND_MESSAGE));
+
+        if (!comment.getUser().getId().equals(commentDto.getUserId())) {
+            log.warn("Попытка обновить комментарий ID {} пользователем ID {}, "
+                            + "не являющимся автором (автор ID {})",
+                    commentId, commentDto.getUserId(), comment.getUser().getId());
+            throw new IllegalArgumentException("Вы не можете редактировать чужой комментарий");
+        }
+
         comment.setText(commentDto.getText());
         Comments updated = commentsRepository.save(comment);
         cacheContainer.getCommentsCache().put(commentId, new CacheEntry<>(updated));

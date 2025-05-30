@@ -6,6 +6,7 @@ import com.univer.bookcom.exception.BookNotFoundException;
 import com.univer.bookcom.exception.InvalidBookDataException;
 import com.univer.bookcom.exception.UserNotFoundException;
 import com.univer.bookcom.model.Book;
+import com.univer.bookcom.model.BookStatus;
 import com.univer.bookcom.model.User;
 import com.univer.bookcom.model.dto.request.BookRequestDto;
 import com.univer.bookcom.model.dto.request.UserRequestDto;
@@ -421,5 +422,25 @@ public class UserService {
         user.addBook(book);
         User updated = userRepository.save(user);
         cacheContainer.getUserCache().put(updated.getId(), new CacheEntry<>(updated));
+    }
+
+    @Transactional
+    public long getPublishedBooksCountByUserId(Long userId) {
+        log.debug("Получение количества книг для пользователя с ID {}", userId);
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException(String.format(USER_NOT_FOUND, userId)));
+        Hibernate.initialize(user.getBooks());
+        log.debug("Коллекция books для пользователя ID {} инициализирована: {}",
+                userId, Hibernate.isInitialized(user.getBooks()));
+        return user.getBooks().size();
+    }
+
+    @Transactional
+    public boolean verifyPassword(String email, String password) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent()) {
+            return user.get().getPassword().equals(password);
+        }
+        return false;
     }
 }
